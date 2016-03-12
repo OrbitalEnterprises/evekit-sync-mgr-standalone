@@ -37,6 +37,7 @@ public class SyncEventScheduler extends EventScheduler {
     List<SyncTracker> trackerCheck = new ArrayList<SyncTracker>();
     trackerCheck.addAll(CapsuleerSyncTracker.getAllUnfinishedTrackers());
     trackerCheck.addAll(CorporationSyncTracker.getAllUnfinishedTrackers());
+    List<SynchronizedEveAccount> scheduled = new ArrayList<SynchronizedEveAccount>();
     int finishedTrackers = 0;
     int dispatchedAccounts = 0;
     for (SyncTracker next : trackerCheck) {
@@ -54,9 +55,19 @@ public class SyncEventScheduler extends EventScheduler {
         finishedTrackers++;
         continue;
       }
+      // Schedule this account to attempt to finish the tracker. This also handles non-auto sync accounts.
+      if (!scheduled.contains(owner)) {
+        SyncEvent syncEvent = new SyncEvent(null, owner);
+        syncEvent.tracker = dispatch.submit(syncEvent);
+        dispatchedAccounts++;
+        pending.add(syncEvent);
+        scheduled.add(owner);
+      }
     }
     // Schedule all active and not-deleted accounts. Sync will only proceed for accounts which are eligible.
     for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllAutoSyncAccounts(false)) {
+      // Skip accounts we've already considered
+      if (scheduled.contains(next)) continue;
       // Skip inactive accounts here
       if (!next.getUserAccount().isActive()) continue;
       // Otherwise, schedule a sync attempt
