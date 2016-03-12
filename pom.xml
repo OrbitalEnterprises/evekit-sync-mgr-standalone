@@ -21,7 +21,7 @@
     <enterprises.orbital.evekit.api_server_url>https://api.eveonline.com</enterprises.orbital.evekit.api_server_url>
     <enterprises.orbital.evekit.sync_attempt_separation>1200000</enterprises.orbital.evekit.sync_attempt_separation> 
     <enterprises.orbital.evekit.sync_terminate_delay>3600000</enterprises.orbital.evekit.sync_terminate_delay> 
-    <enterprises.orbital.evekit.snapshot.interval>86400000</enterprises.orbital.evekit.snapshot.interval> 
+    <enterprises.orbital.evekit.snapshot.interval>21600000</enterprises.orbital.evekit.snapshot.interval>
   </properties>
 
   <build>
@@ -55,6 +55,11 @@
       <artifactId>mysql-connector-java</artifactId>
       <version>5.1.38</version>
     </dependency>
+    <dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-c3p0</artifactId>
+			<version>5.0.6.Final</version>
+		</dependency>    
     <dependency>
 	    <groupId>org.hsqldb</groupId>
 	    <artifactId>hsqldb</artifactId>
