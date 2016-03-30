@@ -98,7 +98,6 @@
             <property name="javax.persistence.jdbc.user" value="${enterprises.orbital.evekit.sync_mgr.db.properties.user}"/>
             <property name="javax.persistence.jdbc.password" value="${enterprises.orbital.evekit.sync_mgr.db.properties.password}"/>
             <property name="hibernate.dialect" value="${enterprises.orbital.evekit.sync_mgr.db.properties.dialect}"/>
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
             <property name="hibernate.show_sql" value="false" />
             <property name="hibernate.format_sql" value="false" />
             
@@ -204,7 +203,6 @@
             <property name="javax.persistence.jdbc.user" value="${enterprises.orbital.evekit.sync_mgr.db.account.user}"/>
             <property name="javax.persistence.jdbc.password" value="${enterprises.orbital.evekit.sync_mgr.db.account.password}"/>
             <property name="hibernate.dialect" value="${enterprises.orbital.evekit.sync_mgr.db.account.dialect}"/>
-            <property name="hibernate.hbm2ddl.auto" value="update"/>
             <property name="hibernate.show_sql" value="false" />
             <property name="hibernate.format_sql" value="false" />
             
