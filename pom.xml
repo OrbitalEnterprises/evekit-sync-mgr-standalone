@@ -7,9 +7,16 @@
   </parent>
   <groupId>enterprises.orbital.evekit</groupId>
   <artifactId>sync-mgr-standalone</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0.0</version>
   <name>Standalone Sync Manager</name>
   <description>Implements EveKit account synchronization on a single machine.</description>
+  <url>https://github.com/OrbitalEnterprises/evekit-sync-mgr-standalone</url>
+  <scm>
+  	<url>https://github.com/OrbitalEnterprises/evekit-model-frontend</url>
+  	<connection>scm:git:https://github.com/OrbitalEnterprises/evekit-sync-mgr-standalone.git</connection>
+  	<tag>rel_1_0_0</tag>
+  	<developerConnection>scm:git:git@github.com:OrbitalEnterprises/evekit-sync-mgr-standalone.git</developerConnection>
+  </scm>
 
   <properties>
     <enterprises.orbital.evekit.sync_mgr.db.properties.driver>com.mysql.jdbc.Driver</enterprises.orbital.evekit.sync_mgr.db.properties.driver>
@@ -38,12 +45,12 @@
   	<dependency>
   		<groupId>enterprises.orbital.evekit</groupId>
   		<artifactId>sync</artifactId>
-  		<version>0.0.1-SNAPSHOT</version>
+  		<version>1.0.0</version>
   	</dependency>
   	<dependency>
   		<groupId>enterprises.orbital.evekit</groupId>
   		<artifactId>snapshot</artifactId>
-  		<version>0.0.1-SNAPSHOT</version>
+  		<version>1.0.0</version>
   	</dependency>
     <dependency>
       <groupId>commons-cli</groupId>
