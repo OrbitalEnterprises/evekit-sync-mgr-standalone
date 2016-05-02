@@ -12,7 +12,7 @@
   <description>Implements EveKit account synchronization on a single machine.</description>
   <url>https://github.com/OrbitalEnterprises/evekit-sync-mgr-standalone</url>
   <scm>
-  	<url>https://github.com/OrbitalEnterprises/evekit-model-frontend</url>
+  	<url>https://github.com/OrbitalEnterprises/evekit-sync-mgr-standalone</url>
   	<connection>scm:git:https://github.com/OrbitalEnterprises/evekit-sync-mgr-standalone.git</connection>
   	<tag>rel_1_0_0</tag>
   	<developerConnection>scm:git:git@github.com:OrbitalEnterprises/evekit-sync-mgr-standalone.git</developerConnection>
@@ -80,6 +80,5 @@
 	    <scope>test</scope>
     </dependency>    
   </dependencies>
-
 
 </project>
