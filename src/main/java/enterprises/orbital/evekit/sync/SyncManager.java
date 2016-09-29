@@ -34,7 +34,8 @@ public class SyncManager {
   public static final long    DEF_NOACTION_DELAY  = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
 
   public static void main(
-                          String[] args) throws IOException {
+                          String[] args)
+    throws IOException {
     // Populate properties
     OrbitalProperties.addPropertyFile("SyncMgrStandalone.properties");
     // Sent persistence unit for properties
@@ -49,6 +50,7 @@ public class SyncManager {
     // 2.d. Queue up snapshot events for accounts which are eligible to take a snapshot
     Map<EventType, EventScheduler> schedules = new HashMap<EventType, EventScheduler>();
     schedules.put(EventType.SYNC, new SyncEventScheduler());
+    schedules.put(EventType.REFSYNC, new RefSyncEventScheduler());
     schedules.put(EventType.DELETE, new DeleteEventScheduler());
     schedules.put(EventType.SNAPSHOT, new SnapshotEventScheduler());
     final long noActionDelay = OrbitalProperties.getLongGlobalProperty(PROP_NOACTION_DELAY, DEF_NOACTION_DELAY);
