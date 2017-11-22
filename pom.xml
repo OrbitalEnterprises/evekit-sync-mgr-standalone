@@ -7,7 +7,7 @@
   </parent>
   <groupId>enterprises.orbital.evekit</groupId>
   <artifactId>sync-mgr-standalone</artifactId>
-  <version>3.1.0</version>
+  <version>4.0.0</version>
   <name>Standalone Sync Manager</name>
   <description>Implements EveKit account synchronization on a single machine.</description>
   <url>https://github.com/OrbitalEnterprises/evekit-sync-mgr-standalone</url>
@@ -28,7 +28,7 @@
     <enterprises.orbital.evekit.sync_attempt_separation>1200000</enterprises.orbital.evekit.sync_attempt_separation> 
     <enterprises.orbital.evekit.sync_terminate_delay>3600000</enterprises.orbital.evekit.sync_terminate_delay> 
     <enterprises.orbital.evekit.snapshot.interval>21600000</enterprises.orbital.evekit.snapshot.interval>
-    <evekit.version>3.1.0</evekit.version>
+    <evekit.version>4.0.0</evekit.version>
     <commons.cli.version>1.3.1</commons.cli.version>
     <mysql.connector.version>5.1.38</mysql.connector.version>
     <hibernate.version>5.0.7.Final</hibernate.version>
