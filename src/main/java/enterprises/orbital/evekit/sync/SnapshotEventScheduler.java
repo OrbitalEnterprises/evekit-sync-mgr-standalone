@@ -37,21 +37,31 @@ public class SnapshotEventScheduler extends EventScheduler {
     // Scan for accounts eligible for snapshot
     long separation = OrbitalProperties.getLongGlobalProperty(PROP_SNAPSHOT_INTERVAL, DEF_SNAPSHOT_INTERVAL);
     long now = OrbitalProperties.getCurrentTime();
-    for (EveKitUserAccount user : EveKitUserAccount.getAllAccounts()) {
-      if (user.isActive()) {
-        for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllAccounts(user, false)) {
+    try {
+      for (EveKitUserAccount user : EveKitUserAccount.getAllAccounts()) {
+        if (user.isActive()) {
           try {
-            long last = SnapshotScheduler.lastSnapshotTime(next);
-            if (now - last > separation) {
-              SnapshotEvent snapshotEvent = new SnapshotEvent(null, next);
-              snapshotEvent.tracker = dispatch.submit(snapshotEvent);
-              pending.add(snapshotEvent);
+            for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllAccounts(user, false)) {
+              try {
+                long last = SnapshotScheduler.lastSnapshotTime(next);
+                if (now - last > separation) {
+                  SnapshotEvent snapshotEvent = new SnapshotEvent(null, next);
+                  snapshotEvent.tracker = dispatch.submit(snapshotEvent);
+                  pending.add(snapshotEvent);
+                }
+              } catch (IOException | ParseException e) {
+                log.log(Level.WARNING, "Failed to check snapshot eligbility, skipping: " + next, e);
+              }
             }
-          } catch (IOException | ParseException e) {
-            log.log(Level.WARNING, "Failed to check snapshot eligbility, skipping: " + next, e);
+          } catch (IOException e) {
+            // DB error retrieving accounts for current user, log it and continue
+            log.log(Level.SEVERE, "Failed to retrieve sync accounts for user " + user, e);
           }
         }
       }
+    } catch (IOException e) {
+      // DB error retrieving all accounts, log it and continue
+      log.log(Level.SEVERE, "Failed to retrieve all user accounts", e);
     }
     // If we didn't dispatch any events, then dispatch a sleep event to delay until the next check
     if (pending.isEmpty()) {

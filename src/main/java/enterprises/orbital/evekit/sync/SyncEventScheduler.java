@@ -1,9 +1,11 @@
 package enterprises.orbital.evekit.sync;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import enterprises.orbital.base.OrbitalProperties;
@@ -65,16 +67,22 @@ public class SyncEventScheduler extends EventScheduler {
       }
     }
     // Schedule all active and not-deleted accounts. Sync will only proceed for accounts which are eligible.
-    for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllAutoSyncAccounts(false)) {
-      // Skip accounts we've already considered
-      if (scheduled.contains(next)) continue;
-      // Skip inactive accounts here
-      if (!next.getUserAccount().isActive()) continue;
-      // Otherwise, schedule a sync attempt
-      SyncEvent syncEvent = new SyncEvent(null, next);
-      syncEvent.tracker = dispatch.submit(syncEvent);
-      dispatchedAccounts++;
-      pending.add(syncEvent);
+    try {
+      for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllAutoSyncAccounts(false)) {
+        // Skip accounts we've already considered
+        if (scheduled.contains(next)) continue;
+        // Skip inactive accounts here
+        if (!next.getUserAccount()
+                 .isActive()) continue;
+        // Otherwise, schedule a sync attempt
+        SyncEvent syncEvent = new SyncEvent(null, next);
+        syncEvent.tracker = dispatch.submit(syncEvent);
+        dispatchedAccounts++;
+        pending.add(syncEvent);
+      }
+    } catch (IOException e) {
+      // DB error retrieving auto sync account list, log and continue
+      log.log(Level.SEVERE, "Failed to retrieve list of auto sync accounts", e);
     }
     // If we didn't dispatch any events, then dispatch a sleep event to delay until the next check
     if (pending.isEmpty()) {

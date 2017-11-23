@@ -1,7 +1,9 @@
 package enterprises.orbital.evekit.sync;
 
+import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import enterprises.orbital.base.OrbitalProperties;
@@ -28,12 +30,17 @@ public class DeleteEventScheduler extends EventScheduler {
   @Override
   public boolean fillPending() {
     // Scan for accounts eligible for deletion
-    for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllMarkedForDelete()) {
-      if (AccountDeleter.deletable(next) == null) {
-        DeleteEvent deleteEvent = new DeleteEvent(null, next);
-        deleteEvent.tracker = dispatch.submit(deleteEvent);
-        pending.add(deleteEvent);
+    try {
+      for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllMarkedForDelete()) {
+        if (AccountDeleter.deletable(next) == null) {
+          DeleteEvent deleteEvent = new DeleteEvent(null, next);
+          deleteEvent.tracker = dispatch.submit(deleteEvent);
+          pending.add(deleteEvent);
+        }
       }
+    } catch (IOException e) {
+      // DB error retrieving accounts marked for delete, log it and continue
+      log.log(Level.SEVERE, "Failed to retrieve accounts marked for delete", e);
     }
     // If we didn't dispatch any events, then dispatch a sleep event to delay until the next check
     if (pending.isEmpty()) {
