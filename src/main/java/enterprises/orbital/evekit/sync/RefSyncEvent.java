@@ -1,12 +1,12 @@
 package enterprises.orbital.evekit.sync;
 
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.evekit.model.RefDataSynchronizer;
+
+import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 // Schedule synchronization for a reference data synchronizer
 public class RefSyncEvent extends ControllerEvent implements Runnable {

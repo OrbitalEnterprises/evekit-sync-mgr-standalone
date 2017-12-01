@@ -32,6 +32,11 @@ public class SyncManager {
   // Sleep time when main event loop performs no action
   public static final String  PROP_NOACTION_DELAY = "enterprises.orbital.evekit.sync_mgr.noaction_delay";
   public static final long    DEF_NOACTION_DELAY  = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
+  // Schedule activation properties
+  public static final String PROP_SYNC_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.SYNC.enabled";
+  public static final String PROP_REFSYNC_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.REFSYNC.enabled";
+  public static final String PROP_DELETE_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.DELETE.enabled";
+  public static final String PROP_SNAPSHOT_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled";
 
   public static void main(
                           String[] args)
@@ -49,10 +54,14 @@ public class SyncManager {
     // 2.c. Queue up delete events for accounts which are eligible for deletion
     // 2.d. Queue up snapshot events for accounts which are eligible to take a snapshot
     Map<EventType, EventScheduler> schedules = new HashMap<EventType, EventScheduler>();
-    schedules.put(EventType.SYNC, new SyncEventScheduler());
-    schedules.put(EventType.REFSYNC, new RefSyncEventScheduler());
-    schedules.put(EventType.DELETE, new DeleteEventScheduler());
-    schedules.put(EventType.SNAPSHOT, new SnapshotEventScheduler());
+    if (OrbitalProperties.getBooleanGlobalProperty(PROP_SYNC_SCHEDULE_ENABLED, false))
+      schedules.put(EventType.SYNC, new SyncEventScheduler());
+    if (OrbitalProperties.getBooleanGlobalProperty(PROP_REFSYNC_SCHEDULE_ENABLED, false))
+      schedules.put(EventType.REFSYNC, new RefSyncEventScheduler());
+    if (OrbitalProperties.getBooleanGlobalProperty(PROP_DELETE_SCHEDULE_ENABLED, false))
+      schedules.put(EventType.DELETE, new DeleteEventScheduler());
+    if (OrbitalProperties.getBooleanGlobalProperty(PROP_SNAPSHOT_SCHEDULE_ENABLED, false))
+      schedules.put(EventType.SNAPSHOT, new SnapshotEventScheduler());
     final long noActionDelay = OrbitalProperties.getLongGlobalProperty(PROP_NOACTION_DELAY, DEF_NOACTION_DELAY);
     // Spin forever - ctrl-C to kill
     log.fine("Entering main event loop");
@@ -63,6 +72,9 @@ public class SyncManager {
       long now = OrbitalProperties.getCurrentTime();
       // Process event queue
       for (EventType next : EventType.values()) {
+        if (!schedules.containsKey(next))
+          // Skip disabled schedulers
+          continue;
         log.info("[START] Processing Queue: " + next);
         EventScheduler nextScheduler = schedules.get(next);
         if (nextScheduler.pending.isEmpty()) {

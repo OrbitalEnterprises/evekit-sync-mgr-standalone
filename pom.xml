@@ -7,7 +7,7 @@
   </parent>
   <groupId>enterprises.orbital.evekit</groupId>
   <artifactId>sync-mgr-standalone</artifactId>
-  <version>4.0.0</version>
+  <version>4.0.1</version>
   <name>Standalone Sync Manager</name>
   <description>Implements EveKit account synchronization on a single machine.</description>
   <url>https://github.com/OrbitalEnterprises/evekit-sync-mgr-standalone</url>
@@ -22,13 +22,25 @@
     <enterprises.orbital.evekit.sync_mgr.db.properties.dialect>org.hibernate.dialect.MySQLDialect</enterprises.orbital.evekit.sync_mgr.db.properties.dialect>
     <enterprises.orbital.evekit.sync_mgr.db.account.driver>com.mysql.jdbc.Driver</enterprises.orbital.evekit.sync_mgr.db.account.driver>
     <enterprises.orbital.evekit.sync_mgr.db.account.dialect>org.hibernate.dialect.MySQLDialect</enterprises.orbital.evekit.sync_mgr.db.account.dialect>
+    <enterprises.orbital.evekit.sync_mgr.db.ref.driver>com.mysql.jdbc.Driver</enterprises.orbital.evekit.sync_mgr.db.ref.driver>
+    <enterprises.orbital.evekit.sync_mgr.db.ref.dialect>org.hibernate.dialect.MySQLDialect</enterprises.orbital.evekit.sync_mgr.db.ref.dialect>
     <enterprises.orbital.evekit.timeout.connect>60000</enterprises.orbital.evekit.timeout.connect>
     <enterprises.orbital.evekit.timeout.read>60000</enterprises.orbital.evekit.timeout.read>
     <enterprises.orbital.evekit.api_server_url>https://api.eveonline.com</enterprises.orbital.evekit.api_server_url>
     <enterprises.orbital.evekit.sync_attempt_separation>1200000</enterprises.orbital.evekit.sync_attempt_separation> 
-    <enterprises.orbital.evekit.sync_terminate_delay>3600000</enterprises.orbital.evekit.sync_terminate_delay> 
+    <enterprises.orbital.evekit.sync_terminate_delay>3600000</enterprises.orbital.evekit.sync_terminate_delay>
+    <enterprises.orbital.evekit.ref.sync_attempt_separation>600000</enterprises.orbital.evekit.ref.sync_attempt_separation>
+    <enterprises.orbital.evekit.ref.sync_terminate_delay>3600000</enterprises.orbital.evekit.ref.sync_terminate_delay>
     <enterprises.orbital.evekit.snapshot.interval>21600000</enterprises.orbital.evekit.snapshot.interval>
-    <evekit.version>4.0.0</evekit.version>
+    <!--
+    By default, all schedules are disabled.  You should enable schedules individually at build time in a settings.xml profile.
+    -->
+    <enterprises.orbital.evekit.sync_mgr.type.SYNC.enabled>false</enterprises.orbital.evekit.sync_mgr.type.SYNC.enabled>
+    <enterprises.orbital.evekit.sync_mgr.type.REFSYNC.enabled>false</enterprises.orbital.evekit.sync_mgr.type.REFSYNC.enabled>
+    <enterprises.orbital.evekit.sync_mgr.type.DELETE.enabled>false</enterprises.orbital.evekit.sync_mgr.type.DELETE.enabled>
+    <enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled>false</enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled>
+    <!-- dependency versions -->
+    <evekit.version>4.0.1</evekit.version>
     <commons.cli.version>1.3.1</commons.cli.version>
     <mysql.connector.version>5.1.38</mysql.connector.version>
     <hibernate.version>5.0.7.Final</hibernate.version>
@@ -50,6 +62,11 @@
     <dependency>
       <groupId>enterprises.orbital.evekit</groupId>
       <artifactId>sync</artifactId>
+      <version>${evekit.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>enterprises.orbital.evekit</groupId>
+      <artifactId>ref-sync</artifactId>
       <version>${evekit.version}</version>
     </dependency>
     <dependency>
