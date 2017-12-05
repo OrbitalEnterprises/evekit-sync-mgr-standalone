@@ -7,7 +7,7 @@
   </parent>
   <groupId>enterprises.orbital.evekit</groupId>
   <artifactId>sync-mgr-standalone</artifactId>
-  <version>4.0.1</version>
+  <version>4.0.2</version>
   <name>Standalone Sync Manager</name>
   <description>Implements EveKit account synchronization on a single machine.</description>
   <url>https://github.com/OrbitalEnterprises/evekit-sync-mgr-standalone</url>
@@ -40,7 +40,7 @@
     <enterprises.orbital.evekit.sync_mgr.type.DELETE.enabled>false</enterprises.orbital.evekit.sync_mgr.type.DELETE.enabled>
     <enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled>false</enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled>
     <!-- dependency versions -->
-    <evekit.version>4.0.1</evekit.version>
+    <evekit.version>4.0.2</evekit.version>
     <commons.cli.version>1.3.1</commons.cli.version>
     <mysql.connector.version>5.1.38</mysql.connector.version>
     <hibernate.version>5.0.7.Final</hibernate.version>
