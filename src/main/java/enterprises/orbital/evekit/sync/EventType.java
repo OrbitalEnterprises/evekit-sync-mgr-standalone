@@ -1,8 +1,9 @@
 package enterprises.orbital.evekit.sync;
 
 public enum EventType {
-                       SYNC,
-                       DELETE,
-                       SNAPSHOT,
-                       REFSYNC
+  SYNC,
+  DELETE,
+  SNAPSHOT,
+  REFSYNC,
+  ESIREFSYNC
 }

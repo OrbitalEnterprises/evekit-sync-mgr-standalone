@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -12,6 +14,11 @@ import java.util.logging.Logger;
 import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.db.DBPropertyProvider;
+import enterprises.orbital.evekit.sync.account.SyncEventScheduler;
+import enterprises.orbital.evekit.sync.delete.DeleteEventScheduler;
+import enterprises.orbital.evekit.sync.esi.ESIRefEventScheduler;
+import enterprises.orbital.evekit.sync.ref.RefSyncEventScheduler;
+import enterprises.orbital.evekit.sync.snapshot.SnapshotEventScheduler;
 
 /**
  * Main Sync process. This class is intended to be started from the command line, and restarted if it fails unexpectedly. The following tasks are performed:
@@ -56,8 +63,10 @@ public class SyncManager {
     Map<EventType, EventScheduler> schedules = new HashMap<EventType, EventScheduler>();
     if (OrbitalProperties.getBooleanGlobalProperty(PROP_SYNC_SCHEDULE_ENABLED, false))
       schedules.put(EventType.SYNC, new SyncEventScheduler());
-    if (OrbitalProperties.getBooleanGlobalProperty(PROP_REFSYNC_SCHEDULE_ENABLED, false))
+    if (OrbitalProperties.getBooleanGlobalProperty(PROP_REFSYNC_SCHEDULE_ENABLED, false)) {
       schedules.put(EventType.REFSYNC, new RefSyncEventScheduler());
+      schedules.put(EventType.ESIREFSYNC, new ESIRefEventScheduler());
+    }
     if (OrbitalProperties.getBooleanGlobalProperty(PROP_DELETE_SCHEDULE_ENABLED, false))
       schedules.put(EventType.DELETE, new DeleteEventScheduler());
     if (OrbitalProperties.getBooleanGlobalProperty(PROP_SNAPSHOT_SCHEDULE_ENABLED, false))
@@ -90,6 +99,12 @@ public class SyncManager {
             if (e.tracker.isDone()) {
               deleteList.add(e);
               action = true;
+              try {
+                // Call the get method to retrieve any uncaught exceptions from the event
+                e.tracker.get();
+              } catch (InterruptedException | ExecutionException | CancellationException f) {
+                log.log(Level.WARNING, "Uncaught exception thrown by event: ", f);
+              }
               continue;
             }
             // Check if an event is stuck

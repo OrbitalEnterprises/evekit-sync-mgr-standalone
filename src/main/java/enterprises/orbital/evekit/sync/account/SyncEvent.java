@@ -1,4 +1,4 @@
-package enterprises.orbital.evekit.sync;
+package enterprises.orbital.evekit.sync.account;
 
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -10,6 +10,7 @@ import enterprises.orbital.evekit.account.SynchronizedEveAccount;
 import enterprises.orbital.evekit.model.AbstractSynchronizer;
 import enterprises.orbital.evekit.model.CapsuleerSynchronizer;
 import enterprises.orbital.evekit.model.CorporationSynchronizer;
+import enterprises.orbital.evekit.sync.ControllerEvent;
 
 // Schedule synchronization for the given account
 public class SyncEvent extends ControllerEvent implements Runnable {
@@ -17,8 +18,8 @@ public class SyncEvent extends ControllerEvent implements Runnable {
   public SynchronizedEveAccount toSync;
   public long                   maxDelay;
 
-  public SyncEvent(Future<?> tracker, SynchronizedEveAccount d) {
-    super(Long.MAX_VALUE, tracker);
+  public SyncEvent(SynchronizedEveAccount d) {
+    super(Long.MAX_VALUE);
     toSync = d;
     maxDelay = PersistentProperty.getLongPropertyWithFallback(SyncEventScheduler.PROP_MAX_DELAY_SYNC, SyncEventScheduler.DEF_MAX_DELAY_SYNC);
   }

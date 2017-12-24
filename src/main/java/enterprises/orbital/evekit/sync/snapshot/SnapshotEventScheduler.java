@@ -1,4 +1,4 @@
-package enterprises.orbital.evekit.sync;
+package enterprises.orbital.evekit.sync.snapshot;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -11,6 +11,8 @@ import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.evekit.account.EveKitUserAccount;
 import enterprises.orbital.evekit.account.SynchronizedEveAccount;
 import enterprises.orbital.evekit.snapshot.SnapshotScheduler;
+import enterprises.orbital.evekit.sync.EventScheduler;
+import enterprises.orbital.evekit.sync.SleepEvent;
 
 public class SnapshotEventScheduler extends EventScheduler {
   public static final Logger log                          = Logger.getLogger(SnapshotEventScheduler.class.getName());
@@ -45,8 +47,8 @@ public class SnapshotEventScheduler extends EventScheduler {
               try {
                 long last = SnapshotScheduler.lastSnapshotTime(next);
                 if (now - last > separation) {
-                  SnapshotEvent snapshotEvent = new SnapshotEvent(null, next);
-                  snapshotEvent.tracker = dispatch.submit(snapshotEvent);
+                  SnapshotEvent snapshotEvent = new SnapshotEvent(next);
+                  snapshotEvent.setTracker(dispatch.submit(snapshotEvent));
                   pending.add(snapshotEvent);
                 }
               } catch (IOException | ParseException e) {
@@ -68,7 +70,7 @@ public class SnapshotEventScheduler extends EventScheduler {
       long delay = OrbitalProperties.getLongGlobalProperty(PROP_SNAPSHOT_CHECK_INTERVAL, DEF_SNAPSHOT_CHECK_INTERVAL);
       log.info("No events to dispatch, sleeping for " + TimeUnit.MINUTES.convert(delay, TimeUnit.MILLISECONDS) + " minutes");
       SleepEvent sleeper = new SleepEvent(delay);
-      sleeper.tracker = dispatch.submit(sleeper);
+      sleeper.setTracker(dispatch.submit(sleeper));
       pending.add(sleeper);
     } else {
       log.info("Dispatched " + pending.size() + " snapshot tasks");

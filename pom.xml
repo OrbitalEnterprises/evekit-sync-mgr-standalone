@@ -7,7 +7,7 @@
   </parent>
   <groupId>enterprises.orbital.evekit</groupId>
   <artifactId>sync-mgr-standalone</artifactId>
-  <version>4.0.2</version>
+  <version>4.1.0</version>
   <name>Standalone Sync Manager</name>
   <description>Implements EveKit account synchronization on a single machine.</description>
   <url>https://github.com/OrbitalEnterprises/evekit-sync-mgr-standalone</url>
@@ -26,6 +26,7 @@
     <enterprises.orbital.evekit.sync_mgr.db.ref.dialect>org.hibernate.dialect.MySQLDialect</enterprises.orbital.evekit.sync_mgr.db.ref.dialect>
     <enterprises.orbital.evekit.timeout.connect>60000</enterprises.orbital.evekit.timeout.connect>
     <enterprises.orbital.evekit.timeout.read>60000</enterprises.orbital.evekit.timeout.read>
+    <enterprises.orbital.evekit.esi.timeout.connect>60000</enterprises.orbital.evekit.esi.timeout.connect>
     <enterprises.orbital.evekit.api_server_url>https://api.eveonline.com</enterprises.orbital.evekit.api_server_url>
     <enterprises.orbital.evekit.sync_attempt_separation>1200000</enterprises.orbital.evekit.sync_attempt_separation> 
     <enterprises.orbital.evekit.sync_terminate_delay>3600000</enterprises.orbital.evekit.sync_terminate_delay>
@@ -40,7 +41,7 @@
     <enterprises.orbital.evekit.sync_mgr.type.DELETE.enabled>false</enterprises.orbital.evekit.sync_mgr.type.DELETE.enabled>
     <enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled>false</enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled>
     <!-- dependency versions -->
-    <evekit.version>4.0.2</evekit.version>
+    <evekit.version>4.1.0</evekit.version>
     <commons.cli.version>1.3.1</commons.cli.version>
     <mysql.connector.version>5.1.38</mysql.connector.version>
     <hibernate.version>5.0.7.Final</hibernate.version>

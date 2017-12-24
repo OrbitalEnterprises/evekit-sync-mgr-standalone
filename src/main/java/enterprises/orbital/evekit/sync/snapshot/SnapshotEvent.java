@@ -1,4 +1,4 @@
-package enterprises.orbital.evekit.sync;
+package enterprises.orbital.evekit.sync.snapshot;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -9,6 +9,7 @@ import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.evekit.account.SynchronizedEveAccount;
 import enterprises.orbital.evekit.snapshot.SnapshotScheduler;
+import enterprises.orbital.evekit.sync.ControllerEvent;
 
 // Create a daily snapshot of the given account
 public class SnapshotEvent extends ControllerEvent implements Runnable {
@@ -16,8 +17,8 @@ public class SnapshotEvent extends ControllerEvent implements Runnable {
   public SynchronizedEveAccount toSnapshot;
   public long                   maxDelay;
 
-  public SnapshotEvent(Future<?> tracker, SynchronizedEveAccount d) {
-    super(Long.MAX_VALUE, tracker);
+  public SnapshotEvent(SynchronizedEveAccount d) {
+    super(Long.MAX_VALUE);
     toSnapshot = d;
     maxDelay = PersistentProperty.getLongPropertyWithFallback(SnapshotEventScheduler.PROP_MAX_DELAY_SNAPSHOT, SnapshotEventScheduler.DEF_MAX_DELAY_SNAPSHOT);
   }

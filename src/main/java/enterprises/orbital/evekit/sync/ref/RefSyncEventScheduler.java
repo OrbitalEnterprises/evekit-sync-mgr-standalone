@@ -1,10 +1,11 @@
-package enterprises.orbital.evekit.sync;
+package enterprises.orbital.evekit.sync.ref;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import enterprises.orbital.base.OrbitalProperties;
+import enterprises.orbital.evekit.sync.EventScheduler;
 
 public class RefSyncEventScheduler extends EventScheduler {
   public static final Logger log                      = Logger.getLogger(RefSyncEventScheduler.class.getName());
@@ -26,8 +27,8 @@ public class RefSyncEventScheduler extends EventScheduler {
   @Override
   public boolean fillPending() {
     // Schedule the next sync. This will automatically clean up any failed or stuck ref sync trackers.
-    RefSyncEvent syncEvent = new RefSyncEvent(null);
-    syncEvent.tracker = dispatch.submit(syncEvent);
+    RefSyncEvent syncEvent = new RefSyncEvent();
+    syncEvent.setTracker(dispatch.submit(syncEvent));
     pending.add(syncEvent);
     return true;
   }

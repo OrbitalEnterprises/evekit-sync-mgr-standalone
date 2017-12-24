@@ -1,4 +1,4 @@
-package enterprises.orbital.evekit.sync;
+package enterprises.orbital.evekit.sync.delete;
 
 import java.io.IOException;
 import java.util.concurrent.Executors;
@@ -9,6 +9,8 @@ import java.util.logging.Logger;
 import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.evekit.account.SynchronizedEveAccount;
 import enterprises.orbital.evekit.model.AccountDeleter;
+import enterprises.orbital.evekit.sync.EventScheduler;
+import enterprises.orbital.evekit.sync.SleepEvent;
 
 public class DeleteEventScheduler extends EventScheduler {
   public static final Logger log                        = Logger.getLogger(DeleteEventScheduler.class.getName());
@@ -33,8 +35,8 @@ public class DeleteEventScheduler extends EventScheduler {
     try {
       for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllMarkedForDelete()) {
         if (AccountDeleter.deletable(next) == null) {
-          DeleteEvent deleteEvent = new DeleteEvent(null, next);
-          deleteEvent.tracker = dispatch.submit(deleteEvent);
+          DeleteEvent deleteEvent = new DeleteEvent(next);
+          deleteEvent.setTracker(dispatch.submit(deleteEvent));
           pending.add(deleteEvent);
         }
       }
@@ -47,7 +49,7 @@ public class DeleteEventScheduler extends EventScheduler {
       long delay = OrbitalProperties.getLongGlobalProperty(PROP_DELETE_CHECK_INTERVAL, DEF_DELETE_CHECK_INTERVAL);
       log.info("No events to dispatch, sleeping for " + TimeUnit.MINUTES.convert(delay, TimeUnit.MILLISECONDS) + " minutes");
       SleepEvent sleeper = new SleepEvent(delay);
-      sleeper.tracker = dispatch.submit(sleeper);
+      sleeper.setTracker(dispatch.submit(sleeper));
       pending.add(sleeper);
     } else {
       log.info("Dispatched " + pending.size() + " delete tasks");

@@ -1,11 +1,12 @@
 package enterprises.orbital.evekit.sync;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public abstract class EventScheduler {
-  public List<ControllerEvent> pending = new ArrayList<ControllerEvent>();
+  public List<ControllerEvent> pending = Collections.synchronizedList(new ArrayList<ControllerEvent>());
   public ExecutorService       dispatch;
 
   /**

@@ -1,8 +1,9 @@
-package enterprises.orbital.evekit.sync;
+package enterprises.orbital.evekit.sync.ref;
 
 import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.evekit.model.RefDataSynchronizer;
+import enterprises.orbital.evekit.sync.ControllerEvent;
 
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -13,8 +14,8 @@ public class RefSyncEvent extends ControllerEvent implements Runnable {
   public static final Logger log = Logger.getLogger(RefSyncEvent.class.getName());
   public long                maxDelay;
 
-  public RefSyncEvent(Future<?> tracker) {
-    super(Long.MAX_VALUE, tracker);
+  public RefSyncEvent() {
+    super(Long.MAX_VALUE);
     maxDelay = PersistentProperty.getLongPropertyWithFallback(RefSyncEventScheduler.PROP_MAX_DELAY_SYNC, RefSyncEventScheduler.DEF_MAX_DELAY_SYNC);
   }
 

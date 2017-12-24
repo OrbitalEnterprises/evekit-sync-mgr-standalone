@@ -1,4 +1,4 @@
-package enterprises.orbital.evekit.sync;
+package enterprises.orbital.evekit.sync.delete;
 
 import java.util.concurrent.Future;
 
@@ -6,14 +6,15 @@ import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.evekit.account.SynchronizedEveAccount;
 import enterprises.orbital.evekit.model.AccountDeleter;
+import enterprises.orbital.evekit.sync.ControllerEvent;
 
 // Delete the given account if it is still eligible for deletion
 public class DeleteEvent extends ControllerEvent implements Runnable {
   public SynchronizedEveAccount toDelete;
   public long                   maxDelay;
 
-  public DeleteEvent(Future<?> tracker, SynchronizedEveAccount d) {
-    super(Long.MAX_VALUE, tracker);
+  public DeleteEvent(SynchronizedEveAccount d) {
+    super(Long.MAX_VALUE);
     toDelete = d;
     maxDelay = PersistentProperty.getLongPropertyWithFallback(DeleteEventScheduler.PROP_MAX_DELAY_DELETE, DeleteEventScheduler.DEF_MAX_DELAY_DELETE);
   }

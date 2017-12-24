@@ -1,17 +1,30 @@
 package enterprises.orbital.evekit.sync;
 
+import enterprises.orbital.base.OrbitalProperties;
+
 import java.util.concurrent.Future;
 
 // Marker interface for controller events
-public abstract class ControllerEvent {
+public abstract class ControllerEvent implements Runnable {
   // Time when this event was dispatched
-  public long      dispatchTime;
+  protected long      dispatchTime;
   // Future tracking execution of this event.
-  public Future<?> tracker;
+  protected Future<?> tracker;
 
-  public ControllerEvent(long dispatchTime, Future<?> tracker) {
+  public ControllerEvent(long dispatchTime) {
     super();
     this.dispatchTime = dispatchTime;
+  }
+
+  public long getDispatchTime() {
+    return dispatchTime;
+  }
+
+  public Future<?> getTracker() {
+    return tracker;
+  }
+
+  public void setTracker(Future<?> tracker) {
     this.tracker = tracker;
   }
 
@@ -27,4 +40,8 @@ public abstract class ControllerEvent {
     return "ControllerEvent [dispatchTime=" + dispatchTime + ", tracker=" + tracker + "]";
   }
 
+  @Override
+  public void run() {
+    dispatchTime = OrbitalProperties.getCurrentTime();
+  }
 }

@@ -1,4 +1,4 @@
-package enterprises.orbital.evekit.sync;
+package enterprises.orbital.evekit.sync.account;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,6 +14,8 @@ import enterprises.orbital.evekit.account.SynchronizedEveAccount;
 import enterprises.orbital.evekit.model.CapsuleerSyncTracker;
 import enterprises.orbital.evekit.model.CorporationSyncTracker;
 import enterprises.orbital.evekit.model.SyncTracker;
+import enterprises.orbital.evekit.sync.EventScheduler;
+import enterprises.orbital.evekit.sync.SleepEvent;
 
 public class SyncEventScheduler extends EventScheduler {
   public static final Logger log                      = Logger.getLogger(SyncEventScheduler.class.getName());
@@ -59,8 +61,8 @@ public class SyncEventScheduler extends EventScheduler {
       }
       // Schedule this account to attempt to finish the tracker. This also handles non-auto sync accounts.
       if (!scheduled.contains(owner)) {
-        SyncEvent syncEvent = new SyncEvent(null, owner);
-        syncEvent.tracker = dispatch.submit(syncEvent);
+        SyncEvent syncEvent = new SyncEvent(owner);
+        syncEvent.setTracker(dispatch.submit(syncEvent));
         dispatchedAccounts++;
         pending.add(syncEvent);
         scheduled.add(owner);
@@ -75,8 +77,8 @@ public class SyncEventScheduler extends EventScheduler {
         if (!next.getUserAccount()
                  .isActive()) continue;
         // Otherwise, schedule a sync attempt
-        SyncEvent syncEvent = new SyncEvent(null, next);
-        syncEvent.tracker = dispatch.submit(syncEvent);
+        SyncEvent syncEvent = new SyncEvent(next);
+        syncEvent.setTracker(dispatch.submit(syncEvent));
         dispatchedAccounts++;
         pending.add(syncEvent);
       }
@@ -89,7 +91,7 @@ public class SyncEventScheduler extends EventScheduler {
       long delay = OrbitalProperties.getLongGlobalProperty(PROP_SYNC_CHECK_INTERVAL, DEF_SYNC_CHECK_INTERVAL);
       log.info("No events to dispatch, sleeping for " + TimeUnit.MINUTES.convert(delay, TimeUnit.MILLISECONDS) + " minutes");
       SleepEvent sleeper = new SleepEvent(delay);
-      sleeper.tracker = dispatch.submit(sleeper);
+      sleeper.setTracker(dispatch.submit(sleeper));
       pending.add(sleeper);
     } else {
       log.info("Finished " + finishedTrackers + " trackers");

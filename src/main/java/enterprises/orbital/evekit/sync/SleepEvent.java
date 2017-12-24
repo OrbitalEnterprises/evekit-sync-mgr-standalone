@@ -7,7 +7,7 @@ public class SleepEvent extends ControllerEvent implements Runnable {
   public long sleepTime;
 
   public SleepEvent(long sleepTime) {
-    super(Long.MAX_VALUE, null);
+    super(Long.MAX_VALUE);
     this.sleepTime = sleepTime;
   }
 
