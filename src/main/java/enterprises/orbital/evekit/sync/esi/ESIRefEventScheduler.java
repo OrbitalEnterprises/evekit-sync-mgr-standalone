@@ -14,7 +14,7 @@ public class ESIRefEventScheduler extends EventScheduler {
   public static final Logger log                      = Logger.getLogger(ESIRefEventScheduler.class.getName());
   // Configuration for each scheduler type
   public static final String PROP_MAX_THREADS_ESI = "enterprises.orbital.evekit.ref_sync_mgr.max_threads.esi";
-  public static final int DEF_MAX_THREADS_ESI = 1;
+  public static final int DEF_MAX_THREADS_ESI = 10;
 
   // Alias for thread pool executor which exposes scheduling classes
   private ScheduledExecutorService dispatchAlias;

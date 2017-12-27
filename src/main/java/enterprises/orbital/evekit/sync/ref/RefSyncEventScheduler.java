@@ -15,9 +15,6 @@ public class RefSyncEventScheduler extends EventScheduler {
   // Max delay properties for various event types
   public static final String PROP_MAX_DELAY_SYNC      = "enterprises.orbital.evekit.ref_sync_mgr.max_delay.sync";
   public static final long   DEF_MAX_DELAY_SYNC       = TimeUnit.MILLISECONDS.convert(30, TimeUnit.MINUTES);
-  // Delay between checking for accounts we can sync
-  public static final String PROP_SYNC_CHECK_INTERVAL = "enterprises.orbital.evekit.ref_sync_mgr.sync_check_interval";
-  public static final long   DEF_SYNC_CHECK_INTERVAL  = TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
 
   public RefSyncEventScheduler() {
     super();

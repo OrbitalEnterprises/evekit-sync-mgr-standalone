@@ -5,6 +5,7 @@ import enterprises.orbital.evekit.model.ESIRefSyncEndpoint;
 import enterprises.orbital.evekit.model.ESIRefSynchronizationHandler;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 
+import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -12,11 +13,14 @@ public class ESIStandardRefSyncEvent extends ControllerEvent implements Runnable
   public static final Logger log = Logger.getLogger(ESIStandardRefSyncEvent.class.getName());
   protected ESIRefSyncEndpoint endpoint;
   protected ESIRefSynchronizationHandler handler;
+  protected ExecutorService scheduler;
 
-  public ESIStandardRefSyncEvent(ESIRefSyncEndpoint endpoint, ESIRefSynchronizationHandler handler) {
+  public ESIStandardRefSyncEvent(ESIRefSyncEndpoint endpoint, ESIRefSynchronizationHandler handler,
+                                 ExecutorService scheduler) {
     super(OrbitalProperties.getCurrentTime());
     this.endpoint = endpoint;
     this.handler = handler;
+    this.scheduler = scheduler;
   }
 
   @Override
@@ -41,11 +45,15 @@ public class ESIStandardRefSyncEvent extends ControllerEvent implements Runnable
     return handler;
   }
 
+  public ExecutorService getScheduler() {
+    return scheduler;
+  }
+
   @Override
   public void run() {
     log.fine("Starting execution: " + toString());
     dispatchTime = OrbitalProperties.getCurrentTime();
-    handler.synch(new RefSyncClientProvider());
+    handler.synch(new RefSyncClientProvider(scheduler));
     log.fine("Execution complete: " + toString());
   }
 

@@ -3,6 +3,7 @@ package enterprises.orbital.evekit.sync.esi;
 import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.evekit.model.*;
+import enterprises.orbital.evekit.model.eve.sync.ESIAllianceSync;
 import enterprises.orbital.evekit.model.server.sync.ESIServerStatusSync;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 import enterprises.orbital.evekit.sync.EventScheduler;
@@ -143,7 +144,7 @@ public class RefCheckScheduleEvent extends ControllerEvent {
           log.fine("Scheduling sync event for " + check);
           long startTime = ESIRefEndpointSyncTracker.getUnfinishedTracker(check)
                                                     .getScheduled();
-          scheduleEvent(new ESIStandardRefSyncEvent(check, handlerDeploymentMap.get(check).generate()), startTime);
+          scheduleEvent(new ESIStandardRefSyncEvent(check, handlerDeploymentMap.get(check).generate(), taskScheduler), startTime);
         }
 
       } catch (TrackerNotFoundException e) {
@@ -151,13 +152,12 @@ public class RefCheckScheduleEvent extends ControllerEvent {
       } catch (IOException e) {
         log.log(Level.WARNING, "Database error attempting to retrieve tracker: " + check + ", continuing", e);
       }
-
-      log.fine("Execution finished");
     }
 
     // Requeue ourselves for a future invocation
     long executionDelay = PersistentProperty.getLongPropertyWithFallback(PROP_CYCLE_DELAY, DEF_CYCLE_DELAY);
     scheduleEvent(new RefCheckScheduleEvent(eventScheduler, taskScheduler), OrbitalProperties.getCurrentTime() + executionDelay);
+    log.fine("Execution finished: " + toString());
   }
 
   // Inner class describing configuration of sync handlers
@@ -170,6 +170,7 @@ public class RefCheckScheduleEvent extends ControllerEvent {
 
   static {
     handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_SERVER_STATUS, ESIServerStatusSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_ALLIANCE, ESIAllianceSync::new);
   }
 
 }
