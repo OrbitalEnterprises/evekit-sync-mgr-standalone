@@ -7,14 +7,9 @@ import java.util.concurrent.Future;
 // Marker interface for controller events
 public abstract class ControllerEvent implements Runnable {
   // Time when this event was dispatched
-  protected long      dispatchTime;
+  protected long dispatchTime;
   // Future tracking execution of this event.
   protected Future<?> tracker;
-
-  public ControllerEvent(long dispatchTime) {
-    super();
-    this.dispatchTime = dispatchTime;
-  }
 
   public long getDispatchTime() {
     return dispatchTime;
@@ -30,7 +25,7 @@ public abstract class ControllerEvent implements Runnable {
 
   /**
    * Return max delay time for this event. If this now - dispatch exceeds this value, then we'll cancel the event.
-   * 
+   *
    * @return max delay time in milliseconds.
    */
   public abstract long maxDelayTime();

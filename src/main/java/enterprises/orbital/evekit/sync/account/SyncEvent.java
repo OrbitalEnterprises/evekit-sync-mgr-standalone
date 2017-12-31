@@ -19,7 +19,6 @@ public class SyncEvent extends ControllerEvent implements Runnable {
   public long                   maxDelay;
 
   public SyncEvent(SynchronizedEveAccount d) {
-    super(Long.MAX_VALUE);
     toSync = d;
     maxDelay = PersistentProperty.getLongPropertyWithFallback(SyncEventScheduler.PROP_MAX_DELAY_SYNC, SyncEventScheduler.DEF_MAX_DELAY_SYNC);
   }
@@ -37,7 +36,7 @@ public class SyncEvent extends ControllerEvent implements Runnable {
   @Override
   public void run() {
     log.fine("Starting execution: " + toString());
-    dispatchTime = OrbitalProperties.getCurrentTime();
+    super.run();
     AbstractSynchronizer sync = toSync.isCharacterType() ? new CapsuleerSynchronizer() : new CorporationSynchronizer();
     try {
       sync.synchronize(toSync);

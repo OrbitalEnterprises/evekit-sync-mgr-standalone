@@ -1,13 +1,16 @@
-package enterprises.orbital.evekit.sync.esi;
+package enterprises.orbital.evekit.sync.ref;
 
 import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.evekit.model.*;
-import enterprises.orbital.evekit.model.eve.sync.ESIAllianceSync;
+import enterprises.orbital.evekit.model.alliance.sync.ESIAllianceSync;
+import enterprises.orbital.evekit.model.faction.sync.*;
 import enterprises.orbital.evekit.model.server.sync.ESIServerStatusSync;
+import enterprises.orbital.evekit.model.sov.sync.ESISovereigntyCampaignSync;
+import enterprises.orbital.evekit.model.sov.sync.ESISovereigntyMapSync;
+import enterprises.orbital.evekit.model.sov.sync.ESISovereigntyStructureSync;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 import enterprises.orbital.evekit.sync.EventScheduler;
-import enterprises.orbital.evekit.sync.ref.ESIStandardRefSyncEvent;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -34,19 +37,18 @@ public class RefCheckScheduleEvent extends ControllerEvent {
   public static final Logger log = Logger.getLogger(RefCheckScheduleEvent.class.getName());
 
   // Max delay for reference check schedule event
-  public static final String PROP_MAX_DELAY      = "enterprises.orbital.evekit.ref_sync_mgr.max_delay.ref_check_schedule";
-  public static final long   DEF_MAX_DELAY       = TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
+  private static final String PROP_MAX_DELAY      = "enterprises.orbital.evekit.ref_sync_mgr.max_delay.ref_check_schedule";
+  private static final long   DEF_MAX_DELAY       = TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
 
   // Time between check schedule events
-  public static final String PROP_CYCLE_DELAY      = "enterprises.orbital.evekit.ref_sync_mgr.ref_check_schedule.cycle";
-  public static final long   DEF_CYCLE_DELAY       = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
+  private static final String PROP_CYCLE_DELAY      = "enterprises.orbital.evekit.ref_sync_mgr.ref_check_schedule.cycle";
+  private static final long   DEF_CYCLE_DELAY       = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
 
-  protected long                maxDelay;
-  protected EventScheduler eventScheduler;
-  protected ScheduledExecutorService taskScheduler;
+  private long                maxDelay;
+  private EventScheduler eventScheduler;
+  private ScheduledExecutorService taskScheduler;
 
-  public RefCheckScheduleEvent(EventScheduler eventScheduler, ScheduledExecutorService taskScheduler) {
-    super(OrbitalProperties.getCurrentTime());
+  RefCheckScheduleEvent(EventScheduler eventScheduler, ScheduledExecutorService taskScheduler) {
     this.eventScheduler = eventScheduler;
     this.taskScheduler = taskScheduler;
     this.maxDelay = PersistentProperty.getLongPropertyWithFallback(PROP_MAX_DELAY, DEF_MAX_DELAY);
@@ -76,7 +78,7 @@ public class RefCheckScheduleEvent extends ControllerEvent {
    * @param ep the endpoint to check
    * @return true if an event for the given endpoint is queued and is not done, false otherwise.
    */
-  protected boolean hasUnfinishedEvent(ESIRefSyncEndpoint ep) {
+  private boolean hasUnfinishedEvent(ESIRefSyncEndpoint ep) {
     synchronized (eventScheduler.pending) {
       for (ControllerEvent next : eventScheduler.pending) {
         if (next instanceof ESIStandardRefSyncEvent) {
@@ -95,7 +97,7 @@ public class RefCheckScheduleEvent extends ControllerEvent {
    * @param ev the event to schedule.
    * @param eventTime time when this event should dispatch
    */
-  protected void scheduleEvent(ControllerEvent ev, long eventTime) {
+  private void scheduleEvent(ControllerEvent ev, long eventTime) {
     long delay = Math.max(0L, eventTime - OrbitalProperties.getCurrentTime());
     log.fine("Scheduling event to occur in " + delay + " milliseconds");
     ev.setTracker(taskScheduler.schedule(ev, delay, TimeUnit.MILLISECONDS));
@@ -105,10 +107,10 @@ public class RefCheckScheduleEvent extends ControllerEvent {
   @Override
   public void run() {
     log.fine("Starting execution: " + toString());
-    dispatchTime = OrbitalProperties.getCurrentTime();
+    super.run();
 
     // Ensure unfinished sync trackers exists for all non-excluded endpoints.
-    Set<ESIRefSyncEndpoint> excluded = ESIRefSynchronizerUtil.getExcludedEndpoints();
+    Set<ESIRefSyncEndpoint> excluded = AbstractESIRefSync.getExcludedEndpoints();
     for (ESIRefSyncEndpoint check : ESIRefSyncEndpoint.values()) {
       log.fine("Starting tracker check for: " + check);
 
@@ -166,11 +168,20 @@ public class RefCheckScheduleEvent extends ControllerEvent {
   }
 
   // Sync handler deployment map
-  protected static Map<ESIRefSyncEndpoint, SyncHandlerGenerator> handlerDeploymentMap = new HashMap<>();
+  private static Map<ESIRefSyncEndpoint, SyncHandlerGenerator> handlerDeploymentMap = new HashMap<>();
 
   static {
     handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_SERVER_STATUS, ESIServerStatusSync::new);
     handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_ALLIANCE, ESIAllianceSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_SOV_MAP, ESISovereigntyMapSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_SOV_STRUCTURE, ESISovereigntyStructureSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_SOV_CAMPAIGN, ESISovereigntyCampaignSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_FW_CHAR_LEADERBOARD, ESIFacWarCharacterLeaderboardSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_FW_CORP_LEADERBOARD, ESIFacWarCorporationLeaderboardSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_FW_FACTION_LEADERBOARD, ESIFacWarFactionLeaderboardSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_FW_STATS, ESIFacWarStatsSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_FW_SYSTEMS, ESIFacWarSystemsSync::new);
+    handlerDeploymentMap.put(ESIRefSyncEndpoint.REF_FW_WARS, ESIFacWarWarsSync::new);
   }
 
 }

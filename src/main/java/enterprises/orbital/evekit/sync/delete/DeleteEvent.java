@@ -14,7 +14,6 @@ public class DeleteEvent extends ControllerEvent implements Runnable {
   public long                   maxDelay;
 
   public DeleteEvent(SynchronizedEveAccount d) {
-    super(Long.MAX_VALUE);
     toDelete = d;
     maxDelay = PersistentProperty.getLongPropertyWithFallback(DeleteEventScheduler.PROP_MAX_DELAY_DELETE, DeleteEventScheduler.DEF_MAX_DELAY_DELETE);
   }
@@ -31,7 +30,7 @@ public class DeleteEvent extends ControllerEvent implements Runnable {
 
   @Override
   public void run() {
-    dispatchTime = OrbitalProperties.getCurrentTime();
+    super.run();
     AccountDeleter del = new AccountDeleter();
     del.deleteMarked(toDelete);
   }

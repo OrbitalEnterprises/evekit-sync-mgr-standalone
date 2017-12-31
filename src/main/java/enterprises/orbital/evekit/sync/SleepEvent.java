@@ -7,7 +7,6 @@ public class SleepEvent extends ControllerEvent implements Runnable {
   public long sleepTime;
 
   public SleepEvent(long sleepTime) {
-    super(Long.MAX_VALUE);
     this.sleepTime = sleepTime;
   }
 
@@ -18,6 +17,7 @@ public class SleepEvent extends ControllerEvent implements Runnable {
 
   @Override
   public void run() {
+    super.run();
     try {
       Thread.sleep(sleepTime);
     } catch (InterruptedException e) {

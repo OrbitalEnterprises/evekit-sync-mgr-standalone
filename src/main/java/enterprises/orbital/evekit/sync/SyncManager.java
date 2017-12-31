@@ -1,5 +1,13 @@
 package enterprises.orbital.evekit.sync;
 
+import enterprises.orbital.base.OrbitalProperties;
+import enterprises.orbital.base.PersistentProperty;
+import enterprises.orbital.db.DBPropertyProvider;
+import enterprises.orbital.evekit.sync.account.SyncEventScheduler;
+import enterprises.orbital.evekit.sync.delete.DeleteEventScheduler;
+import enterprises.orbital.evekit.sync.ref.ESIRefEventScheduler;
+import enterprises.orbital.evekit.sync.snapshot.SnapshotEventScheduler;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,15 +18,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import enterprises.orbital.base.OrbitalProperties;
-import enterprises.orbital.base.PersistentProperty;
-import enterprises.orbital.db.DBPropertyProvider;
-import enterprises.orbital.evekit.sync.account.SyncEventScheduler;
-import enterprises.orbital.evekit.sync.delete.DeleteEventScheduler;
-import enterprises.orbital.evekit.sync.esi.ESIRefEventScheduler;
-import enterprises.orbital.evekit.sync.ref.RefSyncEventScheduler;
-import enterprises.orbital.evekit.sync.snapshot.SnapshotEventScheduler;
 
 /**
  * Main Sync process. This class is intended to be started from the command line, and restarted if it fails unexpectedly. The following tasks are performed:
@@ -35,15 +34,15 @@ import enterprises.orbital.evekit.sync.snapshot.SnapshotEventScheduler;
 public class SyncManager {
   private static final Logger log                 = Logger.getLogger(SyncManager.class.getName());
   // Persistence unit for properties
-  public static final String  PROP_PROPERTIES_PU  = "enterprises.orbital.evekit.sync_mgr.properties.persistence_unit";
+  private static final String  PROP_PROPERTIES_PU  = "enterprises.orbital.evekit.sync_mgr.properties.persistence_unit";
   // Sleep time when main event loop performs no action
-  public static final String  PROP_NOACTION_DELAY = "enterprises.orbital.evekit.sync_mgr.noaction_delay";
-  public static final long    DEF_NOACTION_DELAY  = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
+  private static final String  PROP_NOACTION_DELAY = "enterprises.orbital.evekit.sync_mgr.noaction_delay";
+  private static final long    DEF_NOACTION_DELAY  = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
   // Schedule activation properties
-  public static final String PROP_SYNC_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.SYNC.enabled";
-  public static final String PROP_REFSYNC_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.REFSYNC.enabled";
-  public static final String PROP_DELETE_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.DELETE.enabled";
-  public static final String PROP_SNAPSHOT_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled";
+  private static final String PROP_SYNC_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.SYNC.enabled";
+  private static final String PROP_REFSYNC_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.REFSYNC.enabled";
+  private static final String PROP_DELETE_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.DELETE.enabled";
+  private static final String PROP_SNAPSHOT_SCHEDULE_ENABLED = "enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled";
 
   public static void main(
                           String[] args)
@@ -60,13 +59,11 @@ public class SyncManager {
     // 2.b. Queue up sync events for accounts that have an uncompleted sync tracker (also handles stuck trackers)
     // 2.c. Queue up delete events for accounts which are eligible for deletion
     // 2.d. Queue up snapshot events for accounts which are eligible to take a snapshot
-    Map<EventType, EventScheduler> schedules = new HashMap<EventType, EventScheduler>();
+    Map<EventType, EventScheduler> schedules = new HashMap<>();
     if (OrbitalProperties.getBooleanGlobalProperty(PROP_SYNC_SCHEDULE_ENABLED, false))
       schedules.put(EventType.SYNC, new SyncEventScheduler());
-    if (OrbitalProperties.getBooleanGlobalProperty(PROP_REFSYNC_SCHEDULE_ENABLED, false)) {
-      schedules.put(EventType.REFSYNC, new RefSyncEventScheduler());
+    if (OrbitalProperties.getBooleanGlobalProperty(PROP_REFSYNC_SCHEDULE_ENABLED, false))
       schedules.put(EventType.ESIREFSYNC, new ESIRefEventScheduler());
-    }
     if (OrbitalProperties.getBooleanGlobalProperty(PROP_DELETE_SCHEDULE_ENABLED, false))
       schedules.put(EventType.DELETE, new DeleteEventScheduler());
     if (OrbitalProperties.getBooleanGlobalProperty(PROP_SNAPSHOT_SCHEDULE_ENABLED, false))
@@ -93,7 +90,7 @@ public class SyncManager {
         } else {
           // Process scheduled events
           log.info("Checking status of queued events");
-          List<ControllerEvent> deleteList = new ArrayList<ControllerEvent>();
+          List<ControllerEvent> deleteList = new ArrayList<>();
           for (ControllerEvent e : nextScheduler.pending) {
             // Remove completed event
             if (e.tracker.isDone()) {
@@ -107,13 +104,15 @@ public class SyncManager {
               }
               continue;
             }
-            // Check if an event is stuck
-            long delay = now - e.dispatchTime;
-            if (delay > e.maxDelayTime()) {
-              log.warning("Canceling event due to timeout.  Delay=" + delay + " Max=" + e.maxDelayTime() + " Event=" + e);
-              e.tracker.cancel(true);
-              action = true;
-              continue;
+            // Check if a dispatched event is stuck
+            if (e.dispatchTime > 0) {
+              long delay = now - e.dispatchTime;
+              if (delay > e.maxDelayTime()) {
+                log.warning("Canceling event due to timeout.  Delay=" + delay + " Max=" + e.maxDelayTime() + " Event=" + e);
+                e.tracker.cancel(true);
+                action = true;
+                continue;
+              }
             }
           }
           nextScheduler.pending.removeAll(deleteList);

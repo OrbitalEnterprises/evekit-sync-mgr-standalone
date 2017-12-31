@@ -17,7 +17,6 @@ public class ESIStandardRefSyncEvent extends ControllerEvent implements Runnable
 
   public ESIStandardRefSyncEvent(ESIRefSyncEndpoint endpoint, ESIRefSynchronizationHandler handler,
                                  ExecutorService scheduler) {
-    super(OrbitalProperties.getCurrentTime());
     this.endpoint = endpoint;
     this.handler = handler;
     this.scheduler = scheduler;
@@ -52,7 +51,7 @@ public class ESIStandardRefSyncEvent extends ControllerEvent implements Runnable
   @Override
   public void run() {
     log.fine("Starting execution: " + toString());
-    dispatchTime = OrbitalProperties.getCurrentTime();
+    super.run();
     handler.synch(new RefSyncClientProvider(scheduler));
     log.fine("Execution complete: " + toString());
   }

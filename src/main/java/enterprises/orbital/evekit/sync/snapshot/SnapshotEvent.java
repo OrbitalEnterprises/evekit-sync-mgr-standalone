@@ -18,7 +18,6 @@ public class SnapshotEvent extends ControllerEvent implements Runnable {
   public long                   maxDelay;
 
   public SnapshotEvent(SynchronizedEveAccount d) {
-    super(Long.MAX_VALUE);
     toSnapshot = d;
     maxDelay = PersistentProperty.getLongPropertyWithFallback(SnapshotEventScheduler.PROP_MAX_DELAY_SNAPSHOT, SnapshotEventScheduler.DEF_MAX_DELAY_SNAPSHOT);
   }
@@ -35,7 +34,7 @@ public class SnapshotEvent extends ControllerEvent implements Runnable {
 
   @Override
   public void run() {
-    dispatchTime = OrbitalProperties.getCurrentTime();
+    super.run();
     try {
       SnapshotScheduler.generateAccountSnapshot(toSnapshot, dispatchTime);
     } catch (IOException e) {
