@@ -1,0 +1,205 @@
+package enterprises.orbital.evekit.sync.account;
+
+import enterprises.orbital.base.OrbitalProperties;
+import enterprises.orbital.base.PersistentProperty;
+import enterprises.orbital.evekit.account.EveKitUserAccount;
+import enterprises.orbital.evekit.account.SynchronizedEveAccount;
+import enterprises.orbital.evekit.model.AbstractESIAccountSync;
+import enterprises.orbital.evekit.model.ESIEndpointSyncTracker;
+import enterprises.orbital.evekit.model.ESISyncEndpoint;
+import enterprises.orbital.evekit.model.character.sync.ESICharacterResearchAgentSync;
+import enterprises.orbital.evekit.model.character.sync.ESICharacterWalletBalanceSync;
+import enterprises.orbital.evekit.model.corporation.sync.ESICorporationWalletBalanceSync;
+import enterprises.orbital.evekit.sync.ControllerEvent;
+import enterprises.orbital.evekit.sync.EventScheduler;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ * Periodic event which does the following:
+ * <p>
+ * <ul>
+ * <li>Verify an unfinished scheduled sync tracker exists for every non-excluded ESI endpoint for every account</li>
+ * <li>Verify an event has been queued for every unfinished scheduled sync tracker</li>
+ * <li>Queue a new instance of this checker when complete.</li>
+ * </ul>
+ * <p>
+ * Note that events are not scheduled if the corresponding account lacks the scopes required for a particular
+ * endpoint.  The event handler is expected to handle the case where a sync account is removed or suspended
+ * before the event has a chance to be scheduled.
+ */
+public class AccountCheckScheduleEvent extends ControllerEvent {
+  public static final Logger log = Logger.getLogger(AccountCheckScheduleEvent.class.getName());
+
+  // Max delay for reference check schedule event
+  private static final String PROP_MAX_DELAY = "enterprises.orbital.evekit.sync_mgr.max_delay.sync_check_schedule";
+  private static final long DEF_MAX_DELAY = TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
+
+  // Time between check schedule events
+  private static final String PROP_CYCLE_DELAY = "enterprises.orbital.evekit.sync_mgr.sync_check_schedule.cycle";
+  private static final long DEF_CYCLE_DELAY = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
+
+  private long maxDelay;
+  private EventScheduler eventScheduler;
+  private ScheduledExecutorService taskScheduler;
+
+  AccountCheckScheduleEvent(EventScheduler eventScheduler, ScheduledExecutorService taskScheduler) {
+    this.eventScheduler = eventScheduler;
+    this.taskScheduler = taskScheduler;
+    this.maxDelay = PersistentProperty.getLongPropertyWithFallback(PROP_MAX_DELAY, DEF_MAX_DELAY);
+  }
+
+  @Override
+  public long maxDelayTime() {
+    return maxDelay;
+  }
+
+  @Override
+  public String toString() {
+    return "AccountCheckScheduleEvent{" +
+        "maxDelay=" + maxDelay +
+        ", eventScheduler=" + eventScheduler +
+        ", taskScheduler=" + taskScheduler +
+        '}';
+  }
+
+  /**
+   * Check whether an unfinished event exists for the given tracker.  We assume the tracker is handled by an instance
+   * of ESIStandardAccountSyncEvent.
+   *
+   * @param tracker the tracker to check
+   * @return true if an event for the given tracker is queued and is not done, false otherwise.
+   */
+  private boolean hasUnfinishedEvent(ESIEndpointSyncTracker tracker) {
+    ESISyncEndpoint ep = tracker.getEndpoint();
+    SynchronizedEveAccount account = tracker.getAccount();
+    synchronized (eventScheduler.pending) {
+      for (ControllerEvent next : eventScheduler.pending) {
+        if (next instanceof ESIStandardAccountSyncEvent) {
+          ESIStandardAccountSyncEvent check = (ESIStandardAccountSyncEvent) next;
+          if (check.getEndpoint() == ep &&
+              check.getHandler()
+                   .account()
+                   .equals(account) &&
+              !check.getTracker()
+                    .isDone())
+            return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Schedule a controller event for execution.
+   *
+   * @param ev        the event to schedule.
+   * @param eventTime time when this event should dispatch
+   */
+  private void scheduleEvent(ControllerEvent ev, long eventTime) {
+    long delay = Math.max(0L, eventTime - OrbitalProperties.getCurrentTime());
+    log.fine("Scheduling event to occur in " + delay + " milliseconds");
+    ev.setTracker(taskScheduler.schedule(ev, delay, TimeUnit.MILLISECONDS));
+    eventScheduler.pending.add(ev);
+  }
+
+  @Override
+  public void run() {
+    log.fine("Starting execution: " + toString());
+    super.run();
+
+    // Construct set of excluded endpoints, further refined by endpoints for which we don't yet have handlers.
+    Set<ESISyncEndpoint> excluded = AbstractESIAccountSync.getExcludedEndpoints();
+    for (ESISyncEndpoint check : ESISyncEndpoint.values()) {
+      if (!handlerDeploymentMap.containsKey(check)) excluded.add(check);
+    }
+
+    // Ensure unfinished sync trackers exists for:
+    //
+    // - all non-excluded endpoints
+    // - for non-disabled synch accounts which have not been marked for deletion
+    // - for sync accounts which have the required scopes for the endpoint (note: some accounts may not have ESI creds)
+    //
+    for (ESISyncEndpoint check : ESISyncEndpoint.values()) {
+      log.fine("Starting tracker check for: " + check);
+
+      // Skip excluded by property
+      if (excluded.contains(check))
+        continue;
+
+      // Now iterate through all users and sync accounts
+      try {
+        for (EveKitUserAccount nextUser : EveKitUserAccount.getAllAccounts()) {
+          // Skip disabled users
+          if (!nextUser.isActive())
+            continue;
+
+          // Iterate over non-deleted accounts for this user
+          try {
+            for (SynchronizedEveAccount nextAccount : SynchronizedEveAccount.getAllAccounts(nextUser, false)) {
+              // Verify scope then check for unfinished sync tracker
+              try {
+                if (!nextAccount.hasScope(check.getScope().getName()))
+                  continue;
+                ESIEndpointSyncTracker.getOrCreateUnfinishedTracker(nextAccount, check, OrbitalProperties.getCurrentTime());
+              } catch (IOException e) {
+                log.log(Level.WARNING, "Error retrieving or creating unfinished tracker for endpoint: " + check + ", continuing", e);
+              }
+            }
+          } catch (IOException e) {
+            log.log(Level.WARNING, "Error retrieving sync accounts for user: " + nextUser + ", skipping user for this cycle", e);
+          }
+        }
+
+      } catch (IOException e) {
+        log.log(Level.WARNING, "Error retrieving user list, skipping sync tracker check for this cycle", e);
+      }
+    }
+
+    // Ensure every unfinished sync tracker has a queued, unfinished controller event.
+    try {
+      for (ESIEndpointSyncTracker nextTracker : ESIEndpointSyncTracker.getAllUnfinishedTrackers()) {
+        log.fine("Verifying event exists for: " + nextTracker);
+
+        // Make sure an unfinished controller event exists for this tracker.
+        // If not, queue the event at the scheduled start time for the sync tracker.
+        if (!hasUnfinishedEvent(nextTracker)) {
+          log.fine("Scheduling sync event for " + nextTracker);
+          long startTime = nextTracker.getScheduled();
+          ESISyncEndpoint ep = nextTracker.getEndpoint();
+          scheduleEvent(new ESIStandardAccountSyncEvent(ep, handlerDeploymentMap.get(ep)
+                                                                                .generate(nextTracker.getAccount()), taskScheduler), startTime);
+        }
+      }
+    } catch (IOException e) {
+      log.log(Level.WARNING, "Error retrieving unfinished tracker list, skipping check for this cycle", e);
+    }
+
+    // Requeue ourselves for a future invocation
+    long executionDelay = PersistentProperty.getLongPropertyWithFallback(PROP_CYCLE_DELAY, DEF_CYCLE_DELAY);
+    scheduleEvent(new AccountCheckScheduleEvent(eventScheduler, taskScheduler), OrbitalProperties.getCurrentTime() + executionDelay);
+    log.fine("Execution finished: " + toString());
+  }
+
+  // Inner class describing configuration of sync handlers
+  protected interface SyncHandlerGenerator<A extends AbstractESIAccountSync> {
+    A generate(SynchronizedEveAccount account);
+  }
+
+  // Sync handler deployment map
+  private static Map<ESISyncEndpoint, SyncHandlerGenerator> handlerDeploymentMap = new HashMap<>();
+
+  static {
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_WALLET_BALANCE, ESICharacterWalletBalanceSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CORP_WALLET_BALANCE, ESICorporationWalletBalanceSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_AGENTS, ESICharacterResearchAgentSync::new);
+  }
+
+}

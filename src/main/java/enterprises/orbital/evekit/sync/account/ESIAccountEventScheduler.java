@@ -1,33 +1,34 @@
-package enterprises.orbital.evekit.sync.ref;
+package enterprises.orbital.evekit.sync.account;
 
 import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.evekit.sync.EventScheduler;
+import enterprises.orbital.evekit.sync.ref.RefCheckScheduleEvent;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
 
 /**
- * Schedule synchronization of ESI endpoints for reference data.
+ * Schedule synchronization of ESI endpoints for synchronized account data.
  */
-public class ESIRefEventScheduler extends EventScheduler {
-  public static final Logger log = Logger.getLogger(ESIRefEventScheduler.class.getName());
+public class ESIAccountEventScheduler extends EventScheduler {
+  public static final Logger log = Logger.getLogger(ESIAccountEventScheduler.class.getName());
   // Configuration for each scheduler type
-  private static final String PROP_MAX_THREADS_ESI = "enterprises.orbital.evekit.ref_sync_mgr.max_threads.esi";
+  private static final String PROP_MAX_THREADS_ESI = "enterprises.orbital.evekit.account_sync_mgr.max_threads.esi";
   private static final int DEF_MAX_THREADS_ESI = 10;
 
   // Alias for thread pool executor which exposes scheduling classes
   private ScheduledExecutorService dispatchAlias;
 
-  public ESIRefEventScheduler() {
+  public ESIAccountEventScheduler() {
     super();
     dispatch = dispatchAlias = Executors.newScheduledThreadPool((int) OrbitalProperties.getLongGlobalProperty(PROP_MAX_THREADS_ESI, DEF_MAX_THREADS_ESI));
   }
 
   private void dispatchRefCheckSchedule() {
-    RefCheckScheduleEvent refChecker = new RefCheckScheduleEvent(this, dispatchAlias);
-    refChecker.setTracker(dispatch.submit(refChecker));
-    pending.add(refChecker);
+    AccountCheckScheduleEvent accountChecker = new AccountCheckScheduleEvent(this, dispatchAlias);
+    accountChecker.setTracker(dispatch.submit(accountChecker));
+    pending.add(accountChecker);
   }
 
   @Override

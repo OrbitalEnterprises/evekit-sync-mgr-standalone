@@ -6,7 +6,7 @@ import enterprises.orbital.eve.esi.client.api.FactionWarfareApi;
 import enterprises.orbital.eve.esi.client.api.SovereigntyApi;
 import enterprises.orbital.eve.esi.client.api.StatusApi;
 import enterprises.orbital.eve.esi.client.invoker.ApiClient;
-import enterprises.orbital.evekit.model.ESIClientProvider;
+import enterprises.orbital.evekit.model.ESIRefClientProvider;
 
 import java.util.concurrent.ExecutorService;
 
@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutorService;
  * a separate ApiClient for each API getter.  Threaded requests should request a separate API
  * instance for each thread.
  */
-public class RefSyncClientProvider implements ESIClientProvider {
+public class RefSyncRefClientProvider implements ESIRefClientProvider {
   // User agent property
   private static final String PROP_USER_AGENT = "enterprises.orbital.evekit.esi.user_agent";
   private static final String DEF_USER_AGENT = "unknown-agent";
@@ -26,7 +26,7 @@ public class RefSyncClientProvider implements ESIClientProvider {
 
   private final ExecutorService scheduler;
 
-  RefSyncClientProvider(ExecutorService scheduler) {
+  RefSyncRefClientProvider(ExecutorService scheduler) {
     this.scheduler = scheduler;
   }
 

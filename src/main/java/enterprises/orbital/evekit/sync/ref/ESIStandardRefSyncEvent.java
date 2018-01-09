@@ -1,12 +1,10 @@
 package enterprises.orbital.evekit.sync.ref;
 
-import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.evekit.model.ESIRefSyncEndpoint;
 import enterprises.orbital.evekit.model.ESIRefSynchronizationHandler;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ESIStandardRefSyncEvent extends ControllerEvent implements Runnable {
@@ -52,7 +50,7 @@ public class ESIStandardRefSyncEvent extends ControllerEvent implements Runnable
   public void run() {
     log.fine("Starting execution: " + toString());
     super.run();
-    handler.synch(new RefSyncClientProvider(scheduler));
+    handler.synch(new RefSyncRefClientProvider(scheduler));
     log.fine("Execution complete: " + toString());
   }
 

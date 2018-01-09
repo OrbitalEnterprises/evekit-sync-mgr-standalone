@@ -3,6 +3,7 @@ package enterprises.orbital.evekit.sync;
 import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.db.DBPropertyProvider;
+import enterprises.orbital.evekit.sync.account.ESIAccountEventScheduler;
 import enterprises.orbital.evekit.sync.account.SyncEventScheduler;
 import enterprises.orbital.evekit.sync.delete.DeleteEventScheduler;
 import enterprises.orbital.evekit.sync.ref.ESIRefEventScheduler;
@@ -60,8 +61,10 @@ public class SyncManager {
     // 2.c. Queue up delete events for accounts which are eligible for deletion
     // 2.d. Queue up snapshot events for accounts which are eligible to take a snapshot
     Map<EventType, EventScheduler> schedules = new HashMap<>();
-    if (OrbitalProperties.getBooleanGlobalProperty(PROP_SYNC_SCHEDULE_ENABLED, false))
+    if (OrbitalProperties.getBooleanGlobalProperty(PROP_SYNC_SCHEDULE_ENABLED, false)) {
       schedules.put(EventType.SYNC, new SyncEventScheduler());
+      schedules.put(EventType.ESISYNC, new ESIAccountEventScheduler());
+    }
     if (OrbitalProperties.getBooleanGlobalProperty(PROP_REFSYNC_SCHEDULE_ENABLED, false))
       schedules.put(EventType.ESIREFSYNC, new ESIRefEventScheduler());
     if (OrbitalProperties.getBooleanGlobalProperty(PROP_DELETE_SCHEDULE_ENABLED, false))
