@@ -71,7 +71,7 @@ public class SyncEventScheduler extends EventScheduler {
     }
     // Schedule all active and not-deleted accounts. Sync will only proceed for accounts which are eligible.
     try {
-      for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllAutoSyncAccounts(false)) {
+      for (SynchronizedEveAccount next : SynchronizedEveAccount.getAllSyncAccounts(false)) {
         // Skip accounts we've already considered
         if (scheduled.contains(next)) continue;
         // Skip inactive accounts here

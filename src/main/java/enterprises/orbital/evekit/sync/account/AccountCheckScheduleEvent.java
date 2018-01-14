@@ -148,6 +148,11 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
           // Iterate over non-deleted accounts for this user
           try {
             for (SynchronizedEveAccount nextAccount : SynchronizedEveAccount.getAllAccounts(nextUser, false)) {
+              // Skip disabled sync accounts
+              if (PersistentProperty.getBooleanPropertyWithFallback(nextAccount, "disabled", false)) {
+                log.fine("Sync disabled for account, skipping: " + nextAccount);
+                continue;
+              }
               // Verify scope then check for unfinished sync tracker
               try {
                 if (!nextAccount.hasScope(check.getScope().getName()))
