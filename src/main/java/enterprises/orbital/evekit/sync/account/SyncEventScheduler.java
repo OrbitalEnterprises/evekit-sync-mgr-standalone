@@ -34,6 +34,7 @@ public class SyncEventScheduler extends EventScheduler {
     dispatch = Executors.newFixedThreadPool((int) OrbitalProperties.getLongGlobalProperty(PROP_MAX_THREADS_SYNC, DEF_MAX_THREADS_SYNC));
   }
 
+  @SuppressWarnings("Duplicates")
   @Override
   public boolean fillPending() {
     // Scan for unfinished sync trackers belonging to non-active or marked for delete accounts. We need to finish these trackers directly since the scheduler

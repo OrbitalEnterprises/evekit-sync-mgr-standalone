@@ -9,7 +9,11 @@ import enterprises.orbital.evekit.model.ESIEndpointSyncTracker;
 import enterprises.orbital.evekit.model.ESISyncEndpoint;
 import enterprises.orbital.evekit.model.character.sync.ESICharacterResearchAgentSync;
 import enterprises.orbital.evekit.model.character.sync.ESICharacterWalletBalanceSync;
+import enterprises.orbital.evekit.model.character.sync.ESICharacterWalletJournalSync;
+import enterprises.orbital.evekit.model.character.sync.ESICharacterWalletTransactionSync;
 import enterprises.orbital.evekit.model.corporation.sync.ESICorporationWalletBalanceSync;
+import enterprises.orbital.evekit.model.corporation.sync.ESICorporationWalletJournalSync;
+import enterprises.orbital.evekit.model.corporation.sync.ESICorporationWalletTransactionSync;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 import enterprises.orbital.evekit.sync.EventScheduler;
 
@@ -200,6 +204,10 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_WALLET_BALANCE, ESICharacterWalletBalanceSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_WALLET_BALANCE, ESICorporationWalletBalanceSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_AGENTS, ESICharacterResearchAgentSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_WALLET_JOURNAL, ESICharacterWalletJournalSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CORP_WALLET_JOURNAL, ESICorporationWalletJournalSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_WALLET_TRANSACTIONS, ESICharacterWalletTransactionSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CORP_WALLET_TRANSACTIONS, ESICorporationWalletTransactionSync::new);
   }
 
 }
