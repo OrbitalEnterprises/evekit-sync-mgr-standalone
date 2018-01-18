@@ -125,70 +125,80 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
       if (!handlerDeploymentMap.containsKey(check)) excluded.add(check);
     }
 
-    // Ensure unfinished sync trackers exists for:
-    //
-    // - all non-excluded endpoints
-    // - for non-disabled synch accounts which have not been marked for deletion
-    // - for sync accounts which have the required scopes for the endpoint (note: some accounts may not have ESI creds)
-    //
-    for (ESISyncEndpoint check : ESISyncEndpoint.values()) {
-      log.fine("Starting tracker check for: " + check);
+    // A race is possible where multiple instances of the scheduler may be running.  Synch globally to protect
+    // against this case.  The schedule manager will automatically kill this thread if it hangs for too long.
+    synchronized (AccountCheckScheduleEvent.class) {
 
-      // Skip excluded by property
-      if (excluded.contains(check))
-        continue;
+      // Ensure unfinished sync trackers exists for:
+      //
+      // - all non-excluded endpoints
+      // - for non-disabled synch accounts which have not been marked for deletion
+      // - for sync accounts which have the required scopes for the endpoint (note: some accounts may not have ESI creds)
+      //
+      for (ESISyncEndpoint check : ESISyncEndpoint.values()) {
+        log.fine("Starting tracker check for: " + check);
 
-      // Now iterate through all users and sync accounts
-      try {
-        for (EveKitUserAccount nextUser : EveKitUserAccount.getAllAccounts()) {
-          // Skip disabled users
-          if (!nextUser.isActive())
-            continue;
+        // Skip excluded by property
+        if (excluded.contains(check))
+          continue;
 
-          // Iterate over non-deleted accounts for this user
-          try {
-            for (SynchronizedEveAccount nextAccount : SynchronizedEveAccount.getAllAccounts(nextUser, false)) {
-              // Skip disabled sync accounts
-              if (PersistentProperty.getBooleanPropertyWithFallback(nextAccount, "disabled", false)) {
-                log.fine("Sync disabled for account, skipping: " + nextAccount);
-                continue;
-              }
-              // Verify scope then check for unfinished sync tracker
-              try {
-                if (!nextAccount.hasScope(check.getScope().getName()))
+        // Now iterate through all users and sync accounts
+        try {
+          for (EveKitUserAccount nextUser : EveKitUserAccount.getAllAccounts()) {
+            // Skip disabled users
+            if (!nextUser.isActive())
+              continue;
+
+            // Iterate over non-deleted accounts for this user
+            try {
+              for (SynchronizedEveAccount nextAccount : SynchronizedEveAccount.getAllAccounts(nextUser, false)) {
+                // Skip disabled sync accounts
+                if (PersistentProperty.getBooleanPropertyWithFallback(nextAccount, "disabled", false)) {
+                  log.fine("Sync disabled for account, skipping: " + nextAccount);
                   continue;
-                ESIEndpointSyncTracker.getOrCreateUnfinishedTracker(nextAccount, check, OrbitalProperties.getCurrentTime());
-              } catch (IOException e) {
-                log.log(Level.WARNING, "Error retrieving or creating unfinished tracker for endpoint: " + check + ", continuing", e);
+                }
+                // Verify scope then check for unfinished sync tracker
+                try {
+                  if (!nextAccount.hasScope(check.getScope()
+                                                 .getName()))
+                    continue;
+                  ESIEndpointSyncTracker.getOrCreateUnfinishedTracker(nextAccount, check,
+                                                                      OrbitalProperties.getCurrentTime());
+                } catch (IOException e) {
+                  log.log(Level.WARNING,
+                          "Error retrieving or creating unfinished tracker for endpoint: " + check + ", continuing", e);
+                }
               }
+            } catch (IOException e) {
+              log.log(Level.WARNING,
+                      "Error retrieving sync accounts for user: " + nextUser + ", skipping user for this cycle", e);
             }
-          } catch (IOException e) {
-            log.log(Level.WARNING, "Error retrieving sync accounts for user: " + nextUser + ", skipping user for this cycle", e);
+          }
+
+        } catch (IOException e) {
+          log.log(Level.WARNING, "Error retrieving user list, skipping sync tracker check for this cycle", e);
+        }
+      }
+
+      // Ensure every unfinished sync tracker has a queued, unfinished controller event.
+      try {
+        for (ESIEndpointSyncTracker nextTracker : ESIEndpointSyncTracker.getAllUnfinishedTrackers()) {
+          log.fine("Verifying event exists for: " + nextTracker);
+
+          // Make sure an unfinished controller event exists for this tracker.
+          // If not, queue the event at the scheduled start time for the sync tracker.
+          if (!hasUnfinishedEvent(nextTracker)) {
+            log.fine("Scheduling sync event for " + nextTracker);
+            long startTime = nextTracker.getScheduled();
+            ESISyncEndpoint ep = nextTracker.getEndpoint();
+            scheduleEvent(new ESIStandardAccountSyncEvent(ep, handlerDeploymentMap.get(ep)
+                                                                                  .generate(nextTracker.getAccount()),
+                                                          taskScheduler), startTime);
           }
         }
-
       } catch (IOException e) {
-        log.log(Level.WARNING, "Error retrieving user list, skipping sync tracker check for this cycle", e);
+        log.log(Level.WARNING, "Error retrieving unfinished tracker list, skipping check for this cycle", e);
       }
-    }
-
-    // Ensure every unfinished sync tracker has a queued, unfinished controller event.
-    try {
-      for (ESIEndpointSyncTracker nextTracker : ESIEndpointSyncTracker.getAllUnfinishedTrackers()) {
-        log.fine("Verifying event exists for: " + nextTracker);
-
-        // Make sure an unfinished controller event exists for this tracker.
-        // If not, queue the event at the scheduled start time for the sync tracker.
-        if (!hasUnfinishedEvent(nextTracker)) {
-          log.fine("Scheduling sync event for " + nextTracker);
-          long startTime = nextTracker.getScheduled();
-          ESISyncEndpoint ep = nextTracker.getEndpoint();
-          scheduleEvent(new ESIStandardAccountSyncEvent(ep, handlerDeploymentMap.get(ep)
-                                                                                .generate(nextTracker.getAccount()), taskScheduler), startTime);
-        }
-      }
-    } catch (IOException e) {
-      log.log(Level.WARNING, "Error retrieving unfinished tracker list, skipping check for this cycle", e);
     }
 
     // Requeue ourselves for a future invocation
