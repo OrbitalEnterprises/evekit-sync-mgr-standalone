@@ -54,4 +54,25 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public CorporationApi getCorporationApi() {
+    CorporationApi api = new CorporationApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
+  @Override
+  public AssetsApi getAssetsApi() {
+    AssetsApi api = new AssetsApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
+  @Override
+  public MarketApi getMarketApi() {
+    MarketApi api = new MarketApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }
