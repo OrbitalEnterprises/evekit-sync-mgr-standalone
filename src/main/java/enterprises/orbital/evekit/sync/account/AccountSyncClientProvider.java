@@ -4,7 +4,6 @@ import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.eve.esi.client.api.*;
 import enterprises.orbital.eve.esi.client.invoker.ApiClient;
 import enterprises.orbital.evekit.model.ESIAccountClientProvider;
-import enterprises.orbital.evekit.model.ESIRefClientProvider;
 
 import java.util.concurrent.ExecutorService;
 
@@ -71,6 +70,20 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
   @Override
   public MarketApi getMarketApi() {
     MarketApi api = new MarketApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
+  @Override
+  public IndustryApi getIndustryApi() {
+    IndustryApi api = new IndustryApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
+  @Override
+  public ContractsApi getContractsApi() {
+    ContractsApi api = new ContractsApi();
     api.setApiClient(generateClient());
     return api;
   }
