@@ -226,6 +226,7 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_INDUSTRY, ESICorporationIndustryJobSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_CONTRACTS, ESICharacterContractsSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_CONTRACTS, ESICorporationContractsSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CORP_CONTAINER_LOGS, ESICorporationContainerLogSync::new);
   }
 
 }
