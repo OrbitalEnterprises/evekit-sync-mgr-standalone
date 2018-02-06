@@ -88,4 +88,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public LocationApi getLocationApi() {
+    LocationApi api = new LocationApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }

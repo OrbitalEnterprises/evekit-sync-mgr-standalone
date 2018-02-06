@@ -148,10 +148,12 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
                 log.fine("Sync disabled for account, skipping: " + nextAccount);
                 continue;
               }
-              // Verify scope then check for unfinished sync tracker
               try {
-                if (!nextAccount.hasScope(check.getScope()
-                                               .getName()))
+                // Verify scope then check for unfinished sync tracker
+                // Note that scope may be null for endpoints which don't require a scope
+                // for access.
+                if (check.getScope() != null &&  !nextAccount.hasScope(check.getScope()
+                                                                            .getName()))
                   continue;
                 ESIEndpointSyncTracker.getOrCreateUnfinishedTracker(nextAccount, check,
                                                                     OrbitalProperties.getCurrentTime());
@@ -227,6 +229,9 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_CONTRACTS, ESICharacterContractsSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_CONTRACTS, ESICorporationContractsSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_CONTAINER_LOGS, ESICorporationContainerLogSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_LOCATION, ESICharacterLocationSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_SHIP_TYPE, ESICharacterShipSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_ONLINE, ESICharacterOnlineSync::new);
   }
 
 }
