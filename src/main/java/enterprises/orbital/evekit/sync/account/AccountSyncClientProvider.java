@@ -95,4 +95,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public BookmarksApi getBookmarksApi() {
+    BookmarksApi api = new BookmarksApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }

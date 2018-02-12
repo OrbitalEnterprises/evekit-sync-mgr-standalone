@@ -130,8 +130,10 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
       log.fine("Starting tracker check for: " + check);
 
       // Skip excluded by property
-      if (excluded.contains(check))
+      if (excluded.contains(check)) {
+        log.fine("Skipping excluded endpoint: " + check);
         continue;
+      }
 
       // Now iterate through all users and sync accounts
       try {
@@ -232,6 +234,10 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_LOCATION, ESICharacterLocationSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_SHIP_TYPE, ESICharacterShipSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_ONLINE, ESICharacterOnlineSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_BOOKMARKS, ESICharacterBookmarksSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CORP_BOOKMARKS, ESICorporationBookmarksSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_KILL_MAIL, ESICharacterKillMailSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CORP_KILL_MAIL, ESICorporationKillMailSync::new);
   }
 
 }
