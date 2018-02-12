@@ -102,4 +102,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public KillmailsApi getKillmailsApi() {
+    KillmailsApi api = new KillmailsApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }
