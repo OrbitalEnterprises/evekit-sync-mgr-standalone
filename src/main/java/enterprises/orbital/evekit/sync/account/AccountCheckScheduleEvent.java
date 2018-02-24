@@ -150,6 +150,13 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
                 log.fine("Sync disabled for account, skipping: " + nextAccount);
                 continue;
               }
+
+              // Skip accounts which have no assigned credentials
+              if (nextAccount.getEveCharacterID() == -1) {
+                log.fine("Account has no credentials, skipping: " + nextAccount);
+                continue;
+              }
+
               try {
                 // Verify scope then check for unfinished sync tracker
                 // Note that scope may be null for endpoints which don't require a scope
