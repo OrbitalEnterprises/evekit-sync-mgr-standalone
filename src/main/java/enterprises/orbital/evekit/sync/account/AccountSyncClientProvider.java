@@ -123,4 +123,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public MailApi getMailApi() {
+    MailApi api = new MailApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }
