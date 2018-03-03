@@ -137,4 +137,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public FactionWarfareApi getFactionWarfareApi() {
+    FactionWarfareApi api = new FactionWarfareApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }
