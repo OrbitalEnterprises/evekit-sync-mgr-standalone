@@ -130,4 +130,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public ContactsApi getContactsApi() {
+    ContactsApi api = new ContactsApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }
