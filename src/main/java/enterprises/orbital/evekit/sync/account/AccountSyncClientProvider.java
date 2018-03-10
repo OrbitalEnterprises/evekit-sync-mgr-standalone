@@ -144,4 +144,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public PlanetaryInteractionApi getPlanetaryInteractionApi() {
+    PlanetaryInteractionApi api = new PlanetaryInteractionApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }
