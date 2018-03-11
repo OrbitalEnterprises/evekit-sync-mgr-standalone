@@ -151,4 +151,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public CalendarApi getCalendarApi() {
+    CalendarApi api = new CalendarApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }
