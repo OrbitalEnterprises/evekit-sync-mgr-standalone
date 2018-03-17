@@ -39,7 +39,7 @@ public class SyncEventScheduler extends EventScheduler {
   public boolean fillPending() {
     // Scan for unfinished sync trackers belonging to non-active or marked for delete accounts. We need to finish these trackers directly since the scheduler
     // will skip them.
-    List<SyncTracker> trackerCheck = new ArrayList<SyncTracker>();
+    List<SyncTracker> trackerCheck = new ArrayList<>();
     trackerCheck.addAll(CapsuleerSyncTracker.getAllUnfinishedTrackers());
     trackerCheck.addAll(CorporationSyncTracker.getAllUnfinishedTrackers());
     List<SynchronizedEveAccount> scheduled = new ArrayList<SynchronizedEveAccount>();
@@ -77,6 +77,8 @@ public class SyncEventScheduler extends EventScheduler {
         // Skip inactive accounts here
         if (!next.getUserAccount()
                  .isActive()) continue;
+        // Skip capsuleer accounts, these are now synchronized only via ESI
+        if (next.isCharacterType()) continue;
         // Otherwise, schedule a sync attempt
         SyncEvent syncEvent = new SyncEvent(next);
         syncEvent.setTracker(dispatch.submit(syncEvent));
