@@ -268,6 +268,8 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_TRACK_MEMBERS, ESICorporationMemberTrackingSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_SHAREHOLDERS, ESICorporationShareholdersSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_DIVISIONS, ESICorporationDivisionsSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CORP_TITLES, ESICorporationTitlesSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CORP_MEMBERSHIP, ESICorporationMembershipSync::new);
   }
 
 }
