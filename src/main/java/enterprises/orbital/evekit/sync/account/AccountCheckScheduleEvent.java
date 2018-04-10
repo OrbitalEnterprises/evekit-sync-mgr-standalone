@@ -165,7 +165,8 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
                                                                             .getName()))
                   continue;
                 ESIEndpointSyncTracker.getOrCreateUnfinishedTracker(nextAccount, check,
-                                                                    OrbitalProperties.getCurrentTime());
+                                                                    OrbitalProperties.getCurrentTime(),
+                                                                     null);
               } catch (IOException e) {
                 log.log(Level.WARNING,
                         "Error retrieving or creating unfinished tracker for endpoint: " + check + ", continuing", e);
