@@ -52,7 +52,9 @@ public class ESIStandardRefSyncEvent extends ControllerEvent implements Runnable
   public void run() {
     log.fine("Starting execution: " + toString());
     super.run();
+    synchronized (endpoint) {
     handler.synch(new RefSyncClientProvider(scheduler));
+    }
     log.fine("Execution complete: " + toString());
   }
 

@@ -109,6 +109,8 @@ public class RefCheckScheduleEvent extends ControllerEvent {
     log.fine("Starting execution: " + toString());
     super.run();
 
+    synchronized (RefCheckScheduleEvent.class) {
+	
     // Ensure unfinished sync trackers exists for all non-excluded endpoints.
     Set<ESIRefSyncEndpoint> excluded = AbstractESIRefSync.getExcludedEndpoints();
     for (ESIRefSyncEndpoint check : ESIRefSyncEndpoint.values()) {
@@ -155,7 +157,8 @@ public class RefCheckScheduleEvent extends ControllerEvent {
         log.log(Level.WARNING, "Database error attempting to retrieve tracker: " + check + ", continuing", e);
       }
     }
-
+    }
+    
     // Requeue ourselves for a future invocation
     long executionDelay = PersistentProperty.getLongPropertyWithFallback(PROP_CYCLE_DELAY, DEF_CYCLE_DELAY);
     scheduleEvent(new RefCheckScheduleEvent(eventScheduler, taskScheduler), OrbitalProperties.getCurrentTime() + executionDelay);
