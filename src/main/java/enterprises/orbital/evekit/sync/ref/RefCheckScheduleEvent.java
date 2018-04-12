@@ -126,7 +126,7 @@ public class RefCheckScheduleEvent extends ControllerEvent {
 
         // Check for unfinished sync tracker
         try {
-          ESIRefEndpointSyncTracker.getOrCreateUnfinishedTracker(check, OrbitalProperties.getCurrentTime());
+          ESIRefEndpointSyncTracker.getOrCreateUnfinishedTracker(check, OrbitalProperties.getCurrentTime(), null);
         } catch (IOException e) {
           log.log(Level.WARNING,
                   "Error retrieving or creating unfinished tracker for endpoint: " + check + ", continuing", e);
