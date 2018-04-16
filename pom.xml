@@ -42,6 +42,8 @@
     <enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled>false</enterprises.orbital.evekit.sync_mgr.type.SNAPSHOT.enabled>
     <enterprises.orbital.evekit.account_sync_mgr.max_threads.esi>10</enterprises.orbital.evekit.account_sync_mgr.max_threads.esi>
     <enterprises.orbital.evekit.ref_sync_mgr.max_threads.esi>10</enterprises.orbital.evekit.ref_sync_mgr.max_threads.esi>
+    <enterprises.orbital.evekit.sync.default_esi_rate>3</enterprises.orbital.evekit.sync.default_esi_rate>
+    <enterprises.orbital.evekit.sync.default_esi_error_limit_remain>5</enterprises.orbital.evekit.sync.default_esi_error_limit_remain>
     <!-- dependency versions -->
     <evekit.version>4.2.0</evekit.version>
     <commons.cli.version>1.3.1</commons.cli.version>
