@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public abstract class EventScheduler {
-  public final List<ControllerEvent> pending = Collections.synchronizedList(new ArrayList<ControllerEvent>());
+  public final List<ControllerEvent> pending = Collections.synchronizedList(new ArrayList<>());
   public ExecutorService       dispatch;
 
   /**

@@ -97,6 +97,22 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
   }
 
   /**
+   * Check whether an unfinished "check expired token" event exists.
+   *
+   * @return true if an unfinished "check expired token" event is queued and is not done, false otherwise.
+   */
+  private boolean hasCheckExpiredEvent() {
+    synchronized (eventScheduler.pending) {
+      for (ControllerEvent next : eventScheduler.pending) {
+        if (next instanceof ESICheckExpiredTokenEvent &&
+            !next.getTracker().isDone())
+          return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Schedule a controller event for execution.
    *
    * @param ev        the event to schedule.
@@ -119,6 +135,10 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     for (ESISyncEndpoint check : ESISyncEndpoint.values()) {
       if (!handlerDeploymentMap.containsKey(check)) excluded.add(check);
     }
+
+    // Ensure an unfinished "check expired token" event exists
+    if (!hasCheckExpiredEvent())
+      scheduleEvent(new ESICheckExpiredTokenEvent(eventScheduler, taskScheduler), OrbitalProperties.getCurrentTime());
 
     // Ensure unfinished sync trackers exists for:
     //
