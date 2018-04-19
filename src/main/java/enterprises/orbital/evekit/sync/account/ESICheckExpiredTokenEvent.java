@@ -110,7 +110,7 @@ public class ESICheckExpiredTokenEvent extends ControllerEvent implements Runnab
                        .append("If you wish to stop receiving these alerts, select Main -> Your User Info ")
                        .append("and clear the 'Expired ESI Token Contact Address' field (don't forget to save ")
                        .append("your change).\n\n")
-                       .append("Accounts to Re-Authorize:");
+                       .append("Accounts to Re-Authorize:\n\n");
                 for (SynchronizedEveAccount acct : needsReauth)
                   msgText.append("\t")
                          .append(acct.getName())
