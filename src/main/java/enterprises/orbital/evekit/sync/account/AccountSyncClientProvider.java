@@ -158,4 +158,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public FittingsApi getFittingsApi() {
+    FittingsApi api = new FittingsApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }
