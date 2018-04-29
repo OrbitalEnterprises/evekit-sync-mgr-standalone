@@ -6,6 +6,7 @@ import enterprises.orbital.evekit.model.ESISyncEndpoint;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 import enterprises.orbital.evekit.sync.EventScheduler;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
@@ -22,27 +23,26 @@ public class ESIAccountEventScheduler extends EventScheduler {
   // Alias for thread pool executor which exposes scheduling classes
   private ScheduledExecutorService dispatchAlias;
 
+  // Run the check schedule event on a separate dedicated dispatcher.  This ensures that we are never starved
+  // out by volume on the sync thread pool scheduler.
+  private ScheduledExecutorService checkService = Executors.newSingleThreadScheduledExecutor();
+
   public ESIAccountEventScheduler() {
     super();
     dispatch = dispatchAlias = Executors.newScheduledThreadPool((int) OrbitalProperties.getLongGlobalProperty(PROP_MAX_THREADS_ESI, DEF_MAX_THREADS_ESI));
   }
 
-  private void dispatchRefCheckSchedule() {
-    AccountCheckScheduleEvent accountChecker = new AccountCheckScheduleEvent(this, dispatchAlias);
-    accountChecker.setTracker(dispatch.submit(accountChecker));
+  private void dispatchAccountCheckSchedule() {
+    AccountCheckScheduleEvent accountChecker = new AccountCheckScheduleEvent(this, dispatchAlias, checkService);
+    accountChecker.setTracker(checkService.submit(accountChecker));
     pending.add(accountChecker);
   }
 
   @Override
   public boolean fillPending() {
-    // This should normally only be called once.  Our main task here is to launch the CheckSchedule event.
-    // The CheckSchedule event should automatically queue itself when complete.  If that fails, this method
-    // will be called again to queue a new event.
-
-    // Dispatch check schedule for reference data
-    synchronized (pending) {
-      dispatchRefCheckSchedule();
-    }
+    // The check schedule event handles populating the queue.  If the queue is empty, then we likley
+    // need a status check.
+    statusCheck();
 
     return true;
   }
@@ -66,7 +66,7 @@ public class ESIAccountEventScheduler extends EventScheduler {
       // 2. there IS a check schedule event, but it's done and no new event has been queued yet
       //
       // In either case, we need to add a new checker for liveness
-      dispatchRefCheckSchedule();
+      dispatchAccountCheckSchedule();
     }
   }
 }

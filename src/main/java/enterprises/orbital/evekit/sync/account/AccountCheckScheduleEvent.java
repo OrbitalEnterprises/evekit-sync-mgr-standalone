@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -37,7 +38,7 @@ import java.util.logging.Logger;
 public class AccountCheckScheduleEvent extends ControllerEvent {
   public static final Logger log = Logger.getLogger(AccountCheckScheduleEvent.class.getName());
 
-  // Max delay for reference check schedule event
+  // Max delay for check schedule event
   private static final String PROP_MAX_DELAY = "enterprises.orbital.evekit.sync_mgr.max_delay.sync_check_schedule";
   private static final long DEF_MAX_DELAY = TimeUnit.MILLISECONDS.convert(5, TimeUnit.MINUTES);
 
@@ -48,10 +49,12 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
   private long maxDelay;
   private EventScheduler eventScheduler;
   private ScheduledExecutorService taskScheduler;
+  private ScheduledExecutorService checkService;
 
-  AccountCheckScheduleEvent(EventScheduler eventScheduler, ScheduledExecutorService taskScheduler) {
+  AccountCheckScheduleEvent(EventScheduler eventScheduler, ScheduledExecutorService taskScheduler, ScheduledExecutorService checkThreadService) {
     this.eventScheduler = eventScheduler;
     this.taskScheduler = taskScheduler;
+    this.checkService = checkThreadService;
     this.maxDelay = PersistentProperty.getLongPropertyWithFallback(PROP_MAX_DELAY, DEF_MAX_DELAY);
   }
 
@@ -224,9 +227,12 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     }
 
     // Requeue ourselves for a future invocation
-    long executionDelay = PersistentProperty.getLongPropertyWithFallback(PROP_CYCLE_DELAY, DEF_CYCLE_DELAY);
-    scheduleEvent(new AccountCheckScheduleEvent(eventScheduler, taskScheduler),
-                  OrbitalProperties.getCurrentTime() + executionDelay);
+    long executionDelay = Math.max(0L, PersistentProperty.getLongPropertyWithFallback(PROP_CYCLE_DELAY, DEF_CYCLE_DELAY));
+    log.fine("Scheduling check AccountCheckScheduleEvent to occur in " + executionDelay + " milliseconds");
+    AccountCheckScheduleEvent nextChecker = new AccountCheckScheduleEvent(eventScheduler, taskScheduler, checkService);
+    nextChecker.setTracker(checkService.schedule(nextChecker, executionDelay, TimeUnit.MILLISECONDS));
+    eventScheduler.pending.add(nextChecker);
+
     log.fine("Execution finished: " + toString());
   }
 
