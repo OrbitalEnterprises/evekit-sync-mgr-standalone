@@ -15,4 +15,9 @@ public abstract class EventScheduler {
    * @return true if events were added, false otherwise.
    */
   public abstract boolean fillPending();
+
+  /**
+   * Give this scheduler a chance to verify it is still live and functioning properly.
+   */
+  public void statusCheck() {}
 }

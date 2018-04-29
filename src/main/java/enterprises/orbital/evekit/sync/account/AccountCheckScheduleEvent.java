@@ -120,7 +120,7 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
    */
   private void scheduleEvent(ControllerEvent ev, long eventTime) {
     long delay = Math.max(0L, eventTime - OrbitalProperties.getCurrentTime());
-    log.fine("Scheduling event to occur in " + delay + " milliseconds");
+    log.fine("Scheduling event " + String.valueOf(ev) + " to occur in " + delay + " milliseconds");
     ev.setTracker(taskScheduler.schedule(ev, delay, TimeUnit.MILLISECONDS));
     eventScheduler.pending.add(ev);
   }

@@ -84,6 +84,7 @@ public class SyncManager {
           continue;
         log.info("[START] Processing Queue: " + next);
         EventScheduler nextScheduler = schedules.get(next);
+        log.info("[QUEUE CHECK/CLEANUP] " + next);
         if (nextScheduler.pending.isEmpty()) {
           log.info("Filling queue");
           // Attempt to refill queue with events. We expect the scheduler will also dispatch these events internally
@@ -121,6 +122,8 @@ public class SyncManager {
           nextScheduler.pending.removeAll(deleteList);
           log.info("Cleaned up " + deleteList.size() + " events");
         }
+        log.info("[STATUS CHECK] " + next);
+        nextScheduler.statusCheck();
         log.info("[END] Processing Queue: " + next);
       }
       // If we took no action, then sleep and try again later.

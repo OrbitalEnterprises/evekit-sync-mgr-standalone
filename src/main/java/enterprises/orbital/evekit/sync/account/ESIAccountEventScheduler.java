@@ -1,12 +1,10 @@
 package enterprises.orbital.evekit.sync.account;
 
 import enterprises.orbital.base.OrbitalProperties;
-import enterprises.orbital.evekit.account.SynchronizedEveAccount;
 import enterprises.orbital.evekit.model.ESIEndpointSyncTracker;
 import enterprises.orbital.evekit.model.ESISyncEndpoint;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 import enterprises.orbital.evekit.sync.EventScheduler;
-import enterprises.orbital.evekit.sync.ref.RefCheckScheduleEvent;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,9 +40,33 @@ public class ESIAccountEventScheduler extends EventScheduler {
     // will be called again to queue a new event.
 
     // Dispatch check schedule for reference data
-    dispatchRefCheckSchedule();
+    synchronized (pending) {
+      dispatchRefCheckSchedule();
+    }
 
     return true;
   }
 
+  @Override
+  public void statusCheck() {
+    // Make sure a check schedule event is still in the pending queue and ready to run.  If it died for some
+    // reason, then add it back in.
+    synchronized (pending) {
+      for (ControllerEvent next : pending) {
+        if (next instanceof AccountCheckScheduleEvent &&
+            !next.getTracker()
+                 .isDone())
+          // Event already scheduled and not yet run
+          return;
+      }
+
+      // We end up here in one of two cases:
+      //
+      // 1. no check schedule event is in the pending queue
+      // 2. there IS a check schedule event, but it's done and no new event has been queued yet
+      //
+      // In either case, we need to add a new checker for liveness
+      dispatchRefCheckSchedule();
+    }
+  }
 }
