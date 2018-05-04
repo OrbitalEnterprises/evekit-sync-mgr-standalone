@@ -1,12 +1,9 @@
 package enterprises.orbital.evekit.sync.account;
 
 import enterprises.orbital.base.OrbitalProperties;
-import enterprises.orbital.evekit.model.ESIEndpointSyncTracker;
-import enterprises.orbital.evekit.model.ESISyncEndpoint;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 import enterprises.orbital.evekit.sync.EventScheduler;
 
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Logger;
@@ -29,7 +26,8 @@ public class ESIAccountEventScheduler extends EventScheduler {
 
   public ESIAccountEventScheduler() {
     super();
-    dispatch = dispatchAlias = Executors.newScheduledThreadPool((int) OrbitalProperties.getLongGlobalProperty(PROP_MAX_THREADS_ESI, DEF_MAX_THREADS_ESI));
+    dispatch = dispatchAlias = Executors.newScheduledThreadPool(
+        (int) OrbitalProperties.getLongGlobalProperty(PROP_MAX_THREADS_ESI, DEF_MAX_THREADS_ESI));
   }
 
   private void dispatchAccountCheckSchedule() {

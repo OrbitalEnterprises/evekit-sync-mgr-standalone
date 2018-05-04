@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -24,7 +23,7 @@ import java.util.logging.Logger;
 
 /**
  * Periodic event which does the following:
- * <p>
+ *
  * <ul>
  * <li>Verify an unfinished scheduled sync tracker exists for every non-excluded ESI endpoint for every account</li>
  * <li>Verify an event has been queued for every unfinished scheduled sync tracker</li>
@@ -51,7 +50,8 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
   private ScheduledExecutorService taskScheduler;
   private ScheduledExecutorService checkService;
 
-  AccountCheckScheduleEvent(EventScheduler eventScheduler, ScheduledExecutorService taskScheduler, ScheduledExecutorService checkThreadService) {
+  AccountCheckScheduleEvent(EventScheduler eventScheduler, ScheduledExecutorService taskScheduler,
+                            ScheduledExecutorService checkThreadService) {
     this.eventScheduler = eventScheduler;
     this.taskScheduler = taskScheduler;
     this.checkService = checkThreadService;
@@ -108,7 +108,8 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     synchronized (eventScheduler.pending) {
       for (ControllerEvent next : eventScheduler.pending) {
         if (next instanceof ESICheckExpiredTokenEvent &&
-            !next.getTracker().isDone())
+            !next.getTracker()
+                 .isDone())
           return true;
       }
     }
@@ -184,12 +185,12 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
                 // Verify scope then check for unfinished sync tracker
                 // Note that scope may be null for endpoints which don't require a scope
                 // for access.
-                if (check.getScope() != null &&  !nextAccount.hasScope(check.getScope()
-                                                                            .getName()))
+                if (check.getScope() != null && !nextAccount.hasScope(check.getScope()
+                                                                           .getName()))
                   continue;
                 ESIEndpointSyncTracker.getOrCreateUnfinishedTracker(nextAccount, check,
                                                                     OrbitalProperties.getCurrentTime(),
-                                                                     null);
+                                                                    null);
               } catch (IOException e) {
                 log.log(Level.WARNING,
                         "Error retrieving or creating unfinished tracker for endpoint: " + check + ", continuing", e);
@@ -227,7 +228,8 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     }
 
     // Requeue ourselves for a future invocation
-    long executionDelay = Math.max(0L, PersistentProperty.getLongPropertyWithFallback(PROP_CYCLE_DELAY, DEF_CYCLE_DELAY));
+    long executionDelay = Math.max(0L,
+                                   PersistentProperty.getLongPropertyWithFallback(PROP_CYCLE_DELAY, DEF_CYCLE_DELAY));
     log.fine("Scheduling check AccountCheckScheduleEvent to occur in " + executionDelay + " milliseconds");
     AccountCheckScheduleEvent nextChecker = new AccountCheckScheduleEvent(eventScheduler, taskScheduler, checkService);
     nextChecker.setTracker(checkService.schedule(nextChecker, executionDelay, TimeUnit.MILLISECONDS));
@@ -289,7 +291,6 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_NOTIFICATIONS, ESICharacterNotificationSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_MEDALS, ESICharacterMedalsSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_TITLES, ESICharacterTitlesSync::new);
-    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_CHANNELS, ESICharacterChatChannelsSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_MEDALS, ESICorporationMedalsSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_SHEET, ESICorporationSheetSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_TRACK_MEMBERS, ESICorporationMemberTrackingSync::new);
