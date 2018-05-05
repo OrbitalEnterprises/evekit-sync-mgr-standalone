@@ -165,4 +165,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
     return api;
   }
 
+  @Override
+  public LoyaltyApi getLoyaltyApi() {
+    LoyaltyApi api = new LoyaltyApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
 }
