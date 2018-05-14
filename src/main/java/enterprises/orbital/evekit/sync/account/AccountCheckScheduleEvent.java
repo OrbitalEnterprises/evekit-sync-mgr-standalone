@@ -234,6 +234,10 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
       for (ESIEndpointSyncTracker nextTracker : ESIEndpointSyncTracker.getAllUnfinishedTrackers()) {
         log.fine("Verifying event exists for: " + nextTracker);
 
+        // Check for sharding, skip accounts we shouldn't process.
+        if (shard && !shardFilter.process(nextTracker.getAccount()))
+          continue;
+
         // Make sure an unfinished controller event exists for this tracker.
         // If not, queue the event at the scheduled start time for the sync tracker.
         if (!hasUnfinishedEvent(nextTracker)) {
