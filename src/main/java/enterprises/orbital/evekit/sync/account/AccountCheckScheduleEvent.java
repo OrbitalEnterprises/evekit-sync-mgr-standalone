@@ -45,10 +45,20 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
   private static final String PROP_CYCLE_DELAY = "enterprises.orbital.evekit.sync_mgr.sync_check_schedule.cycle";
   private static final long DEF_CYCLE_DELAY = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
 
+  // Sharding configuration
+  private static final String PROP_ENABLE_SHARDING = "enterprises.orbital.evekit.account_sync_mgr.shard";
+  private static final boolean DEF_ENABLE_SHARDING = false;
+  private static final String PROP_SHARD_ALGO = "enterprises.orbital.evekit.account_sync_mgr.shard_algo";
+  private static final String DEF_SHARD_ALGO = ShardManager.Strategies.SINGLE_HASH.name();
+  private static final String PROP_SHARD_CONFIG = "enterprises.orbital.evekit.account_sync_mgr.shard_config";
+  private static final String DEF_SHARD_CONFIG = "0,1,2,3,4,5,6,7,8,9";
+
   private long maxDelay;
   private EventScheduler eventScheduler;
   private ScheduledExecutorService taskScheduler;
   private ScheduledExecutorService checkService;
+  private boolean shard;
+  private ShardFilter shardFilter;
 
   AccountCheckScheduleEvent(EventScheduler eventScheduler, ScheduledExecutorService taskScheduler,
                             ScheduledExecutorService checkThreadService) {
@@ -56,6 +66,14 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     this.taskScheduler = taskScheduler;
     this.checkService = checkThreadService;
     this.maxDelay = PersistentProperty.getLongPropertyWithFallback(PROP_MAX_DELAY, DEF_MAX_DELAY);
+    this.shard = OrbitalProperties.getBooleanGlobalProperty(PROP_ENABLE_SHARDING, DEF_ENABLE_SHARDING);
+    if (this.shard) {
+      String stratName = OrbitalProperties.getGlobalProperty(PROP_SHARD_ALGO, DEF_SHARD_ALGO);
+      String stratArgs = OrbitalProperties.getGlobalProperty(PROP_SHARD_CONFIG, DEF_SHARD_CONFIG);
+      this.shardFilter = ShardManager.createShardFilter(ShardManager.Strategies.valueOf(stratName),
+                                                        stratArgs);
+      log.info("Sharding enabled with sharding algorithm " + stratName + " and init: " + stratArgs);
+    }
   }
 
   @Override
@@ -169,6 +187,10 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
           // Iterate over non-deleted accounts for this user
           try {
             for (SynchronizedEveAccount nextAccount : SynchronizedEveAccount.getAllAccounts(nextUser, false)) {
+              // Check for sharding, skip accounts we shouldn't process.
+              if (shard && !shardFilter.process(nextAccount))
+                continue;
+
               // Skip disabled sync accounts
               if (PersistentProperty.getBooleanPropertyWithFallback(nextAccount, "disabled", false)) {
                 log.fine("Sync disabled for account, skipping: " + nextAccount);
