@@ -33,6 +33,7 @@
     <enterprises.orbital.evekit.ref.sync_attempt_separation>600000</enterprises.orbital.evekit.ref.sync_attempt_separation>
     <enterprises.orbital.evekit.ref.sync_terminate_delay>3600000</enterprises.orbital.evekit.ref.sync_terminate_delay>
     <enterprises.orbital.evekit.snapshot.interval>21600000</enterprises.orbital.evekit.snapshot.interval>
+    <enterprises.orbital.evekit.account_sync_mgr.shard>false</enterprises.orbital.evekit.account_sync_mgr.shard>
     <!--
     By default, all schedules are disabled.  You should enable schedules individually at build time in a settings.xml profile.
     -->
