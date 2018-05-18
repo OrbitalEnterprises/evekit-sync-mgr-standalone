@@ -25,35 +25,6 @@ public class ESIStandardAccountSyncEvent extends ControllerEvent implements Runn
     this.scheduler = scheduler;
   }
 
-  // TODO: for now, we'll serialize by account to make sync fair among all accounts
-//  // Global map of locks to protect against races on the same (endpoint, account) pair
-//  protected static Map<Pair<ESISyncEndpoint, Long>, Object> handlerLock = new HashMap<>();
-//
-//  protected Object getHandlerLock(ESISyncEndpoint ep, SynchronizedEveAccount acct) {
-//    synchronized (handlerLock) {
-//      Object lck = handlerLock.get(Pair.of(ep, acct.getAid()));
-//      if (lck == null) {
-//        lck = new Long(OrbitalProperties.getCurrentTime());
-//        handlerLock.put(Pair.of(ep, acct.getAid()), lck);
-//      }
-//      return lck;
-//    }
-//  }
-
-  // Global map of locks to protect against races on the same account
-  private static final Map<Long, Object> handlerLock = new HashMap<>();
-
-  private Object getHandlerLock(ESISyncEndpoint ep, SynchronizedEveAccount acct) {
-    synchronized (handlerLock) {
-      Object lck = handlerLock.get(acct.getAid());
-      if (lck == null) {
-        lck = OrbitalProperties.getCurrentTime();
-        handlerLock.put(acct.getAid(), lck);
-      }
-      return lck;
-    }
-  }
-
   @Override
   public long maxDelayTime() {
     return handler.maxDelay();
@@ -84,9 +55,11 @@ public class ESIStandardAccountSyncEvent extends ControllerEvent implements Runn
   public void run() {
     log.fine("Starting execution: " + toString());
     super.run();
-    // Prevent races between two threads synchronizing on the same account and endpoint.
-    // This can lead to duplicate data since model uniqueness is not guaranteed (evolves over time).
-    synchronized (getHandlerLock(handler.endpoint(), handler.account())) {
+    // For fairness, and to prevent certain data races, serialize sync activities on a
+    // per-sync account basis.  This doesn't really guarantee fairness if a single account
+    // has many active threads.  Fortunately, this still works pretty well since sync
+    // times for endpoints are reasonably diverse.
+    synchronized (SynchronizedEveAccount.getSyncAccountLock(handler.account())) {
       handler.synch(new AccountSyncClientProvider(scheduler));
     }
     log.fine("Execution complete: " + toString());
