@@ -168,38 +168,38 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     // - for non-disabled synch accounts which have not been marked for deletion
     // - for sync accounts which have the required scopes for the endpoint (note: some accounts may not have ESI creds)
     //
-    for (ESISyncEndpoint check : ESISyncEndpoint.values()) {
-      log.fine("Starting tracker check for: " + check);
+    // Iterate through all users and sync accounts
+    try {
+      for (EveKitUserAccount nextUser : EveKitUserAccount.getAllAccounts()) {
+        // Skip disabled users
+        if (!nextUser.isActive())
+          continue;
 
-      // Skip excluded by property
-      if (excluded.contains(check)) {
-        log.fine("Skipping excluded endpoint: " + check);
-        continue;
-      }
+        // Iterate over non-deleted accounts for this user
+        try {
+          for (SynchronizedEveAccount nextAccount : SynchronizedEveAccount.getAllAccounts(nextUser, false)) {
+            // Check for sharding, skip accounts we shouldn't process.
+            if (shard && !shardFilter.process(nextAccount))
+              continue;
 
-      // Now iterate through all users and sync accounts
-      try {
-        for (EveKitUserAccount nextUser : EveKitUserAccount.getAllAccounts()) {
-          // Skip disabled users
-          if (!nextUser.isActive())
-            continue;
+            // Skip disabled sync accounts
+            if (PersistentProperty.getBooleanPropertyWithFallback(nextAccount, "disabled", false)) {
+              log.fine("Sync disabled for account, skipping: " + nextAccount);
+              continue;
+            }
 
-          // Iterate over non-deleted accounts for this user
-          try {
-            for (SynchronizedEveAccount nextAccount : SynchronizedEveAccount.getAllAccounts(nextUser, false)) {
-              // Check for sharding, skip accounts we shouldn't process.
-              if (shard && !shardFilter.process(nextAccount))
-                continue;
+            // Skip accounts which have no assigned credentials
+            if (nextAccount.getEveCharacterID() == -1) {
+              log.fine("Account has no credentials, skipping: " + nextAccount);
+              continue;
+            }
 
-              // Skip disabled sync accounts
-              if (PersistentProperty.getBooleanPropertyWithFallback(nextAccount, "disabled", false)) {
-                log.fine("Sync disabled for account, skipping: " + nextAccount);
-                continue;
-              }
+            for (ESISyncEndpoint check : ESISyncEndpoint.values()) {
+              log.fine("Starting tracker check for: " + check);
 
-              // Skip accounts which have no assigned credentials
-              if (nextAccount.getEveCharacterID() == -1) {
-                log.fine("Account has no credentials, skipping: " + nextAccount);
+              // Skip excluded by property
+              if (excluded.contains(check)) {
+                log.fine("Skipping excluded endpoint: " + check);
                 continue;
               }
 
@@ -218,15 +218,14 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
                         "Error retrieving or creating unfinished tracker for endpoint: " + check + ", continuing", e);
               }
             }
-          } catch (IOException e) {
-            log.log(Level.WARNING,
-                    "Error retrieving sync accounts for user: " + nextUser + ", skipping user for this cycle", e);
           }
+        } catch (IOException e) {
+          log.log(Level.WARNING,
+                  "Error retrieving sync accounts for user: " + nextUser + ", skipping user for this cycle", e);
         }
-
-      } catch (IOException e) {
-        log.log(Level.WARNING, "Error retrieving user list, skipping sync tracker check for this cycle", e);
       }
+    } catch (IOException e) {
+      log.log(Level.WARNING, "Error retrieving user list, skipping sync tracker check for this cycle", e);
     }
 
     // Ensure every unfinished sync tracker has a queued, unfinished controller event.
