@@ -9,6 +9,7 @@ import enterprises.orbital.evekit.sync.ControllerEvent;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 public class ESIStandardAccountSyncEvent extends ControllerEvent implements Runnable {
@@ -59,8 +60,12 @@ public class ESIStandardAccountSyncEvent extends ControllerEvent implements Runn
     // per-sync account basis.  This doesn't really guarantee fairness if a single account
     // has many active threads.  Fortunately, this still works pretty well since sync
     // times for endpoints are reasonably diverse.
-    synchronized (SynchronizedEveAccount.getSyncAccountLock(handler.account())) {
+    ReentrantLock lck = SynchronizedEveAccount.getSyncAccountLock(handler.account());
+    lck.lock();
+    try {
       handler.synch(new AccountSyncClientProvider(scheduler));
+    } finally {
+      lck.unlock();
     }
     log.fine("Execution complete: " + toString());
   }

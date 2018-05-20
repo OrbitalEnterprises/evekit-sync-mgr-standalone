@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -198,28 +199,42 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
               continue;
             }
 
-            for (ESISyncEndpoint check : ESISyncEndpoint.values()) {
+            // Attempt to acquire lock for this account.  If we can't get it, then skip this account
+            // until the next iteration.  This prevents the scheduler thread from getting stuck waiting
+            // for a slow update.
+            ReentrantLock lck = SynchronizedEveAccount.getSyncAccountLock(nextAccount);
+            if (!lck.tryLock()) {
+              // Lock held by another thread, skip
+              log.fine("Unable to obtain account lock, skipping: " + nextAccount);
+              continue;
+            }
+            try {
+              for (ESISyncEndpoint check : ESISyncEndpoint.values()) {
 
-              // Skip excluded by property
-              if (excluded.contains(check)) {
-                log.fine("Skipping excluded endpoint: " + check);
-                continue;
-              }
-
-              try {
-                // Verify scope then check for unfinished sync tracker
-                // Note that scope may be null for endpoints which don't require a scope
-                // for access.
-                if (check.getScope() != null && !nextAccount.hasScope(check.getScope()
-                                                                           .getName()))
+                // Skip excluded by property
+                if (excluded.contains(check)) {
+                  log.fine("Skipping excluded endpoint: " + check);
                   continue;
-                ESIEndpointSyncTracker.getOrCreateUnfinishedTracker(nextAccount, check,
-                                                                    OrbitalProperties.getCurrentTime(),
-                                                                    null);
-              } catch (IOException e) {
-                log.log(Level.WARNING,
-                        "Error retrieving or creating unfinished tracker for endpoint: " + check + ", continuing", e);
+                }
+
+                try {
+                  // Verify scope then check for unfinished sync tracker
+                  // Note that scope may be null for endpoints which don't require a scope
+                  // for access.
+                  if (check.getScope() != null && !nextAccount.hasScope(check.getScope()
+                                                                             .getName()))
+                    continue;
+
+                  ESIEndpointSyncTracker.getOrCreateUnfinishedTracker(nextAccount, check,
+                                                                      OrbitalProperties.getCurrentTime(),
+                                                                      null);
+                } catch (IOException e) {
+                  log.log(Level.WARNING,
+                          "Error retrieving or creating unfinished tracker for endpoint: " + check + ", continuing", e);
+                }
               }
+            } finally {
+              lck.unlock();
             }
           }
         } catch (IOException e) {
