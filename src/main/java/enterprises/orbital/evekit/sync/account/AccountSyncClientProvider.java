@@ -19,7 +19,7 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
 
   // Client connection timeout in milliseconds
   private static final String PROP_CONNECT_TIMEOUT = "enterprises.orbital.evekit.esi.timeout.connect";
-  private static final long DEF_CONNECT_TIMEOUT = 60000L;
+  private static final long DEF_CONNECT_TIMEOUT = 60_000L;
 
   private final ExecutorService scheduler;
 
@@ -168,6 +168,20 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
   @Override
   public LoyaltyApi getLoyaltyApi() {
     LoyaltyApi api = new LoyaltyApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
+  @Override
+  public OpportunitiesApi getOpportunitiesApi() {
+    OpportunitiesApi api = new OpportunitiesApi();
+    api.setApiClient(generateClient());
+    return api;
+  }
+
+  @Override
+  public FleetsApi getFleetsApi() {
+    FleetsApi api = new FleetsApi();
     api.setApiClient(generateClient());
     return api;
   }

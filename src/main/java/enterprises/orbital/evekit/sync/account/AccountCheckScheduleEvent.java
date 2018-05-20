@@ -336,6 +336,10 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_LOYALTY, ESICharacterLoyaltyPointsSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CHAR_MINING, ESICharacterMiningLedgerSync::new);
     handlerDeploymentMap.put(ESISyncEndpoint.CORP_MINING, ESICorporationMiningLedgerSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_ALLIANCE_CONTACTS, ESICharacterAllianceContactsSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_OPPORTUNITIES, ESICharacterOpportunitiesSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CORP_STRUCTURES, ESICorporationStructuresSync::new);
+    handlerDeploymentMap.put(ESISyncEndpoint.CHAR_FLEETS, ESICharacterFleetsSync::new);
   }
 
 }
