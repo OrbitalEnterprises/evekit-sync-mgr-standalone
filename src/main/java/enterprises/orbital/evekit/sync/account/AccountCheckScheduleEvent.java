@@ -56,12 +56,13 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
 
   private long maxDelay;
   private EventScheduler eventScheduler;
-  private ScheduledExecutorService taskScheduler;
+  private ESIAccountEventScheduler.SyncActionScheduler taskScheduler;
   private ScheduledExecutorService checkService;
   private boolean shard;
   private ShardFilter shardFilter;
 
-  AccountCheckScheduleEvent(EventScheduler eventScheduler, ScheduledExecutorService taskScheduler,
+  AccountCheckScheduleEvent(EventScheduler eventScheduler,
+                            ESIAccountEventScheduler.SyncActionScheduler taskScheduler,
                             ScheduledExecutorService checkThreadService) {
     this.eventScheduler = eventScheduler;
     this.taskScheduler = taskScheduler;
@@ -141,10 +142,11 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
    * @param ev        the event to schedule.
    * @param eventTime time when this event should dispatch
    */
-  private void scheduleEvent(ControllerEvent ev, long eventTime) {
+  private void scheduleEvent(SynchronizedEveAccount account, ControllerEvent ev, long eventTime) {
     long delay = Math.max(0L, eventTime - OrbitalProperties.getCurrentTime());
     log.fine("Scheduling event " + String.valueOf(ev) + " to occur in " + delay + " milliseconds");
-    ev.setTracker(taskScheduler.schedule(ev, delay, TimeUnit.MILLISECONDS));
+    ev.setTracker(taskScheduler.getScheduler(account)
+                               .schedule(ev, delay, TimeUnit.MILLISECONDS));
     eventScheduler.pending.add(ev);
   }
 
@@ -161,7 +163,9 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
 
     // Ensure an unfinished "check expired token" event exists
     if (!hasCheckExpiredEvent())
-      scheduleEvent(new ESICheckExpiredTokenEvent(eventScheduler, taskScheduler), OrbitalProperties.getCurrentTime());
+      scheduleEvent(null,
+                    new ESICheckExpiredTokenEvent(eventScheduler, taskScheduler.getScheduler(null)),
+                    OrbitalProperties.getCurrentTime());
 
     // Ensure unfinished sync trackers exists for:
     //
@@ -263,9 +267,13 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
           log.fine("Scheduling sync event for " + nextTracker);
           long startTime = nextTracker.getScheduled();
           ESISyncEndpoint ep = nextTracker.getEndpoint();
-          scheduleEvent(new ESIStandardAccountSyncEvent(ep, handlerDeploymentMap.get(ep)
-                                                                                .generate(nextTracker.getAccount()),
-                                                        taskScheduler), startTime);
+          SynchronizedEveAccount acct = nextTracker.getAccount();
+          scheduleEvent(acct,
+                        new ESIStandardAccountSyncEvent(ep,
+                                                        handlerDeploymentMap.get(ep)
+                                                                            .generate(acct),
+                                                        taskScheduler.getScheduler(acct)),
+                        startTime);
         }
       }
     } catch (IOException e) {
