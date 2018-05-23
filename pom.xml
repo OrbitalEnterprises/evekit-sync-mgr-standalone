@@ -35,6 +35,8 @@
     <enterprises.orbital.evekit.snapshot.interval>21600000</enterprises.orbital.evekit.snapshot.interval>
     <enterprises.orbital.evekit.account_sync_mgr.shard>false</enterprises.orbital.evekit.account_sync_mgr.shard>
     <enterprises.orbital.evekit.account_sync_mgr.sched_regime>shared</enterprises.orbital.evekit.account_sync_mgr.sched_regime>
+    <enterprises.orbital.evekit.sync_mgr.db.properties.max_size>2</enterprises.orbital.evekit.sync_mgr.db.properties.max_size>
+    <enterprises.orbital.evekit.sync_mgr.db.account.max_size>20</enterprises.orbital.evekit.sync_mgr.db.account.max_size>
     <!--
     By default, all schedules are disabled.  You should enable schedules individually at build time in a settings.xml profile.
     -->

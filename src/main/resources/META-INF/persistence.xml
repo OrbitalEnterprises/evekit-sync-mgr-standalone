@@ -22,7 +22,7 @@
             <property name="hibernate.format_sql" value="false" />
 
             <property name="hibernate.c3p0.min_size" value="1"/>
-            <property name="hibernate.c3p0.max_size" value="2"/>
+            <property name="hibernate.c3p0.max_size" value="${enterprises.orbital.evekit.sync_mgr.db.properties.max_size}"/>
             <property name="hibernate.c3p0.timeout" value="300"/>
             <property name="hibernate.c3p0.max_statements" value="5"/>
             <property name="hibernate.c3p0.idle_test_period" value="10000"/>            
@@ -145,9 +145,9 @@
             <property name="hibernate.format_sql" value="false" />
 
             <property name="hibernate.c3p0.min_size" value="5"/>
-            <property name="hibernate.c3p0.max_size" value="60"/>
+            <property name="hibernate.c3p0.max_size" value="${enterprises.orbital.evekit.sync_mgr.db.account.max_size}"/>
             <property name="hibernate.c3p0.timeout" value="300"/>
-            <property name="hibernate.c3p0.max_statements" value="50"/>
+            <property name="hibernate.c3p0.max_statements" value="100"/>
             <property name="hibernate.c3p0.idle_test_period" value="10000"/>            
         </properties>
 
