@@ -1,11 +1,13 @@
 package enterprises.orbital.evekit.sync.account;
 
 import enterprises.orbital.base.OrbitalProperties;
+import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.eve.esi.client.api.*;
 import enterprises.orbital.eve.esi.client.invoker.ApiClient;
 import enterprises.orbital.evekit.model.ESIAccountClientProvider;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * API client provider for sync requests.  This provider is threading friendly and provides
@@ -21,6 +23,11 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
   private static final String PROP_CONNECT_TIMEOUT = "enterprises.orbital.evekit.esi.timeout.connect";
   private static final long DEF_CONNECT_TIMEOUT = 60_000L;
 
+  // Client connection read timeout in milliseconds
+  private static final String PROP_READ_TIMEOUT = "enterprises.orbital.evekit.esi.timeout.read";
+  private static final long DEF_READ_TIMEOUT = 60_000L;
+
+
   private final ExecutorService scheduler;
 
   AccountSyncClientProvider(ExecutorService scheduler) {
@@ -30,7 +37,12 @@ public class AccountSyncClientProvider implements ESIAccountClientProvider {
   private ApiClient generateClient() {
     ApiClient client = new ApiClient();
     client.setUserAgent(OrbitalProperties.getGlobalProperty(PROP_USER_AGENT, DEF_USER_AGENT));
-    client.setConnectTimeout((int) OrbitalProperties.getLongGlobalProperty(PROP_CONNECT_TIMEOUT, DEF_CONNECT_TIMEOUT));
+    client.setConnectTimeout(
+        (int) PersistentProperty.getLongPropertyWithFallback(PROP_CONNECT_TIMEOUT, DEF_CONNECT_TIMEOUT));
+    client.getHttpClient()
+          .setReadTimeout(
+              (int) PersistentProperty.getLongPropertyWithFallback(PROP_READ_TIMEOUT, DEF_READ_TIMEOUT),
+              TimeUnit.MILLISECONDS);
     return client;
   }
 
