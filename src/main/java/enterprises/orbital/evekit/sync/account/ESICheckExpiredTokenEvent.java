@@ -5,24 +5,17 @@ import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
 import enterprises.orbital.evekit.account.EveKitUserAccount;
 import enterprises.orbital.evekit.account.SynchronizedEveAccount;
-import enterprises.orbital.evekit.model.ESIAccountSynchronizationHandler;
-import enterprises.orbital.evekit.model.ESISyncEndpoint;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 import enterprises.orbital.evekit.sync.EventScheduler;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.Transport;
-import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -37,16 +30,16 @@ import java.util.stream.Collectors;
 public class ESICheckExpiredTokenEvent extends ControllerEvent implements Runnable {
   public static final Logger log = Logger.getLogger(ESICheckExpiredTokenEvent.class.getName());
 
-  public static final String PROP_ALERT_SOURCE_ADDRESS = "enterprises.orbital.evekit.sync_mgr.alert_source_address";
+  private static final String PROP_ALERT_SOURCE_ADDRESS = "enterprises.orbital.evekit.sync_mgr.alert_source_address";
   private static final String DEF_ALERT_SOURCE_ADDRESS = "deadlybulb@orbital.enterprises";
 
-  public static final String PROP_ALERT_CHECK_DELAY = "enterprises.orbital.evekit.sync_mgr.alert_check_delay";
+  private static final String PROP_ALERT_CHECK_DELAY = "enterprises.orbital.evekit.sync_mgr.alert_check_delay";
   private static final long DEF_ALERT_CHECK_DELAY = TimeUnit.MILLISECONDS.convert(4, TimeUnit.HOURS);
 
   private EventScheduler scheduler;
   private ScheduledExecutorService taskScheduler;
 
-  public ESICheckExpiredTokenEvent(EventScheduler scheduler, ScheduledExecutorService taskScheduler) {
+  ESICheckExpiredTokenEvent(EventScheduler scheduler, ScheduledExecutorService taskScheduler) {
     this.scheduler = scheduler;
     this.taskScheduler = taskScheduler;
   }
@@ -107,9 +100,8 @@ public class ESICheckExpiredTokenEvent extends ControllerEvent implements Runnab
                        .append("re-authorized.  Most account data will not synchronize until these tokens ")
                        .append("have been re-authorized.  Please visit https://evekit.orbital.enterprises ")
                        .append("and select Account Sync -> Account List to re-authorize your accounts.  ")
-                       .append("If you wish to stop receiving these alerts, select Main -> Your User Info ")
-                       .append("and clear the 'Expired ESI Token Contact Address' field (don't forget to save ")
-                       .append("your change).\n\n")
+                       .append("If you wish to stop receiving these alerts, select Settings ")
+                       .append("and clear the 'Expired ESI Token Contact Address' field.\n\n")
                        .append("Accounts to Re-Authorize:\n\n");
                 for (SynchronizedEveAccount acct : needsReauth)
                   msgText.append("\t")

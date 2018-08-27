@@ -1,25 +1,27 @@
 package enterprises.orbital.evekit.sync.snapshot;
 
-import java.io.IOException;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import enterprises.orbital.base.OrbitalProperties;
 import enterprises.orbital.base.PersistentProperty;
+import enterprises.orbital.evekit.account.EveKitUserNotification;
 import enterprises.orbital.evekit.account.SynchronizedEveAccount;
 import enterprises.orbital.evekit.snapshot.SnapshotScheduler;
 import enterprises.orbital.evekit.sync.ControllerEvent;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 // Create a daily snapshot of the given account
 public class SnapshotEvent extends ControllerEvent implements Runnable {
-  public static final Logger    log = Logger.getLogger(SnapshotEvent.class.getName());
-  public SynchronizedEveAccount toSnapshot;
-  public long                   maxDelay;
+  public static final Logger log = Logger.getLogger(SnapshotEvent.class.getName());
+  private SynchronizedEveAccount toSnapshot;
+  private long maxDelay;
 
-  public SnapshotEvent(SynchronizedEveAccount d) {
+  SnapshotEvent(SynchronizedEveAccount d) {
     toSnapshot = d;
-    maxDelay = PersistentProperty.getLongPropertyWithFallback(SnapshotEventScheduler.PROP_MAX_DELAY_SNAPSHOT, SnapshotEventScheduler.DEF_MAX_DELAY_SNAPSHOT);
+    maxDelay = PersistentProperty.getLongPropertyWithFallback(SnapshotEventScheduler.PROP_MAX_DELAY_SNAPSHOT,
+                                                              SnapshotEventScheduler.DEF_MAX_DELAY_SNAPSHOT);
   }
 
   @Override
@@ -37,6 +39,11 @@ public class SnapshotEvent extends ControllerEvent implements Runnable {
     super.run();
     try {
       SnapshotScheduler.generateAccountSnapshot(toSnapshot, dispatchTime);
+      SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
+      String asof = fmt.format(new Date(dispatchTime));
+      EveKitUserNotification.makeNote(toSnapshot.getUserAccount(),
+                                      "Snapshot for synchronized account \"" + toSnapshot.getName() + "\" as of "
+                                          + asof + " is now ready. You can download this snapshot from the account page (cloud icon).");
     } catch (IOException e) {
       log.log(Level.WARNING, "error generating snapshot for: " + toSnapshot, e);
     }

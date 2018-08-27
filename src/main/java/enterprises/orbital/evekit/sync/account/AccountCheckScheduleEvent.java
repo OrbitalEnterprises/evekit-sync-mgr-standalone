@@ -137,6 +137,23 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
   }
 
   /**
+   * Check whether an unfinished "check expired notification" event exists.
+   *
+   * @return true if an unfinished "check expired notification" event is queued and is not done, false otherwise.
+   */
+  private boolean hasCheckExpiredNotificationEvent() {
+    synchronized (eventScheduler.pending) {
+      for (ControllerEvent next : eventScheduler.pending) {
+        if (next instanceof CheckExpiredNotificationEvent &&
+            !next.getTracker()
+                 .isDone())
+          return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * Schedule a controller event for execution.
    *
    * @param ev        the event to schedule.
@@ -165,6 +182,12 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     if (!hasCheckExpiredEvent())
       scheduleEvent(null,
                     new ESICheckExpiredTokenEvent(eventScheduler, taskScheduler.getScheduler(null)),
+                    OrbitalProperties.getCurrentTime());
+
+    // Ensure an unfinished "check expired notification" event exists
+    if (!hasCheckExpiredNotificationEvent())
+      scheduleEvent(null,
+                    new CheckExpiredNotificationEvent(eventScheduler, taskScheduler.getScheduler(null)),
                     OrbitalProperties.getCurrentTime());
 
     // Ensure unfinished sync trackers exists for:
