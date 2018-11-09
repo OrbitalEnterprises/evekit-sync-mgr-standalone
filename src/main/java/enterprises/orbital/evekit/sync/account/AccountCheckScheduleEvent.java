@@ -14,6 +14,7 @@ import enterprises.orbital.evekit.sync.EventScheduler;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,6 +54,9 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
   private static final String DEF_SHARD_ALGO = ShardManager.Strategies.SINGLE_HASH.name();
   private static final String PROP_SHARD_CONFIG = "enterprises.orbital.evekit.account_sync_mgr.shard_config";
   private static final String DEF_SHARD_CONFIG = "0,1,2,3,4,5,6,7,8,9";
+
+  // Cache of NPC corporations to filter for unsupported corp endpoints
+  private static Set<Integer> npcCorpList = null;
 
   private long maxDelay;
   private EventScheduler eventScheduler;
@@ -252,6 +256,11 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
                                                                              .getName()))
                     continue;
 
+                  if (isMemberOfNPCCorp(nextAccount) && isInvalidNPCCorpEndpoint(check))
+                    // Many corporation endpoints are forbidden if the character is a member
+                    // of an NPC corporation so no point in scheduling the sync.
+                    continue;
+
                   ESIEndpointSyncTracker.getOrCreateUnfinishedTracker(nextAccount, check,
                                                                       OrbitalProperties.getCurrentTime(),
                                                                       null);
@@ -313,6 +322,73 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
     eventScheduler.pending.add(nextChecker);
 
     log.fine("Execution finished: " + toString());
+  }
+
+  private boolean isMemberOfNPCCorp(SynchronizedEveAccount account) {
+    long corpID = account.getEveCorporationID();
+    synchronized (AccountCheckScheduleEvent.class) {
+      if (npcCorpList == null) {
+        try {
+          // Initialize cache - note that we only do this once per scheduler
+          // We rely on schedulers automatically restarting once a day to auto-refresh the cache
+          AccountSyncClientProvider provider = new AccountSyncClientProvider(checkService);
+          npcCorpList = new HashSet<>();
+          npcCorpList.addAll(provider.getCorporationApi()
+                                     .getCorporationsNpccorps(null, null));
+        } catch (Exception e) {
+          // Failed, we'll try again later
+          npcCorpList = null;
+          return false;
+        }
+      }
+      return npcCorpList.contains((int) corpID);
+    }
+  }
+
+  private boolean isInvalidNPCCorpEndpoint(ESISyncEndpoint target) {
+    switch (target) {
+      case CORP_SHAREHOLDERS:
+      case CORP_DIVISIONS:
+      case CORP_TITLES:
+      case CORP_CUSTOMS:
+      case CORP_FACILITIES:
+      case CORP_STARBASES:
+      case CORP_STRUCTURES:
+      case CORP_WALLET_BALANCE:
+      case CORP_WALLET_JOURNAL:
+      case CORP_WALLET_TRANSACTIONS:
+      case CORP_ASSETS:
+      case CORP_BLUEPRINTS:
+      case CORP_MARKET:
+      case CORP_INDUSTRY:
+      case CORP_MINING:
+      case CORP_CONTAINER_LOGS:
+      case CORP_KILL_MAIL:
+      case CORP_TRACK_MEMBERS:
+        // All of the endpoints above require a corporation role which can't be granted to
+        // members of NPC corporations
+
+      case CORP_MEMBERSHIP:
+        // Forbidden with no reason given
+
+      case CORP_BOOKMARKS:
+        // This actually causes a 500 (unhandled internal error) instead of a 403, but it's logical that
+        // this wouldn't be allowed for NPC corps.
+
+      case CORP_MEDALS:
+        // NPC corps don't issue medals, and issued medals would require a corp role anyway
+        return true;
+
+      default:
+        // CORP_STANDINGS - ok to request for NPC corp
+        // CORP_FACTION_WAR - ok to request for NPC corp
+        // CORP_SHEET - ok to request for NPC corp
+        // CORP_CONTRACTS - allowed but always empty at the moment
+        // CORP_CONTACTS - allowed but always empty at the moment
+        return false;
+
+    }
+
   }
 
   // Inner class describing configuration of sync handlers
