@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 // Create a daily snapshot of the given account
 public class SnapshotEvent extends ControllerEvent implements Runnable {
   public static final Logger log = Logger.getLogger(SnapshotEvent.class.getName());
+  public static final String USER_SETTING_NOTIFY_SNAPSHOT = "showSnapshotNotifications";
   private SynchronizedEveAccount toSnapshot;
   private long maxDelay;
 
@@ -39,11 +40,17 @@ public class SnapshotEvent extends ControllerEvent implements Runnable {
     super.run();
     try {
       SnapshotScheduler.generateAccountSnapshot(toSnapshot, dispatchTime);
-      SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
-      String asof = fmt.format(new Date(dispatchTime));
-      EveKitUserNotification.makeNote(toSnapshot.getUserAccount(),
-                                      "Snapshot for synchronized account \"" + toSnapshot.getName() + "\" as of "
-                                          + asof + " is now ready. You can download this snapshot from the account page (cloud icon).");
+      boolean notify = PersistentProperty.getBooleanPropertyWithFallback(toSnapshot, USER_SETTING_NOTIFY_SNAPSHOT,
+                                                                         true);
+      if (notify) {
+        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
+        String asof = fmt.format(new Date(dispatchTime));
+        EveKitUserNotification.makeNote(toSnapshot.getUserAccount(),
+                                        "Snapshot for synchronized account \"" + toSnapshot.getName() + "\" as of "
+                                            + asof + " is now ready. You can download this snapshot from the account page (cloud icon)." +
+                                            "  Don't want to be notified on snapshots?  You can disable notifications in your user " +
+                                            "settings (gear icon).");
+      }
     } catch (IOException e) {
       log.log(Level.WARNING, "error generating snapshot for: " + toSnapshot, e);
     }

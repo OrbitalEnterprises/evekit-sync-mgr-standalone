@@ -337,6 +337,7 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
                                      .getCorporationsNpccorps(null, null));
         } catch (Exception e) {
           // Failed, we'll try again later
+          log.log(Level.WARNING, "Failed to load NPC corp cache", e);
           npcCorpList = null;
           return false;
         }
