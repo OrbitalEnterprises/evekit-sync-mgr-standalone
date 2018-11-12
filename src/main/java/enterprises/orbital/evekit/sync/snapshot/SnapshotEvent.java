@@ -40,7 +40,8 @@ public class SnapshotEvent extends ControllerEvent implements Runnable {
     super.run();
     try {
       SnapshotScheduler.generateAccountSnapshot(toSnapshot, dispatchTime);
-      boolean notify = PersistentProperty.getBooleanPropertyWithFallback(toSnapshot, USER_SETTING_NOTIFY_SNAPSHOT,
+      boolean notify = PersistentProperty.getBooleanPropertyWithFallback(toSnapshot.getUserAccount(),
+                                                                         USER_SETTING_NOTIFY_SNAPSHOT,
                                                                          true);
       log.fine("Notify on snapshot completion? " + String.valueOf(notify) + " for " + toSnapshot);
       if (notify) {
