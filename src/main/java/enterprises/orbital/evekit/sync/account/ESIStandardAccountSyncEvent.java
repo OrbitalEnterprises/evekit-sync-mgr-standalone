@@ -63,7 +63,7 @@ public class ESIStandardAccountSyncEvent extends ControllerEvent implements Runn
     int maxDelay = ThreadLocalRandom.current()
                                     .nextInt(30);
     try {
-      // Wait no less than 30 and no more than 60 sexonds for the lock.  If we fail
+      // Wait no less than 30 and no more than 60 seconds for the lock.  If we fail
       // to obtain the lock, then yield this thread and wait for account checker to
       // reschedule us.
       if (!lck.tryLock(30 + maxDelay, TimeUnit.SECONDS)) {
