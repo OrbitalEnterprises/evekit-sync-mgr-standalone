@@ -36,6 +36,9 @@ public class ESICheckExpiredTokenEvent extends ControllerEvent implements Runnab
   private static final String PROP_ALERT_CHECK_DELAY = "enterprises.orbital.evekit.sync_mgr.alert_check_delay";
   private static final long DEF_ALERT_CHECK_DELAY = TimeUnit.MILLISECONDS.convert(4, TimeUnit.HOURS);
 
+  private static final String PROP_GMAIL_ACCOUNT_ADDRESS = "enterprises.orbital.evekit.sync_mgr.alert_gmail_address";
+  private static final String PROP_GMAIL_ACCOUNT_PASSWORD = "enterprises.orbital.evekit.sync_mgr.alert_gmail_password";
+
   private EventScheduler scheduler;
   private ScheduledExecutorService taskScheduler;
 
@@ -84,7 +87,13 @@ public class ESICheckExpiredTokenEvent extends ControllerEvent implements Runnab
 
             // If any accounts need to be re-authorized, send e-mail to the appropriate contact address
             if (!needsReauth.isEmpty()) {
+              log.info("Sending expired token warning for to " + contactAddress);
               Properties props = System.getProperties();
+              String gmailHost = "smtp.gmail.com";
+              String gmailSource = OrbitalProperties.getGlobalProperty(PROP_GMAIL_ACCOUNT_ADDRESS);
+              String gmailPassword = OrbitalProperties.getGlobalProperty(PROP_GMAIL_ACCOUNT_PASSWORD);
+              props.put("mail.smtps.host", gmailHost);
+              props.put("mail.smtps.auth", "true");
               Session session = Session.getInstance(props, null);
               Message msg = new MimeMessage(session);
               try {
@@ -99,7 +108,7 @@ public class ESICheckExpiredTokenEvent extends ControllerEvent implements Runnab
                 msgText.append("The following synchronized accounts have ESI access tokens which need to be ")
                        .append("re-authorized.  Most account data will not synchronize until these tokens ")
                        .append("have been re-authorized.  Please visit https://evekit.orbital.enterprises ")
-                       .append("and select Account Sync -> Account List to re-authorize your accounts.  ")
+                       .append("and re-authorize the ESI token for the appropriate account.  ")
                        .append("If you wish to stop receiving these alerts, select Settings ")
                        .append("and clear the 'Expired ESI Token Contact Address' field.\n\n")
                        .append("Accounts to Re-Authorize:\n\n");
@@ -108,7 +117,10 @@ public class ESICheckExpiredTokenEvent extends ControllerEvent implements Runnab
                          .append(acct.getName())
                          .append("\n");
                 msg.setText(msgText.toString());
-                Transport.send(msg);
+                Transport transport = session.getTransport("smtps");
+                transport.connect(gmailHost, gmailSource, gmailPassword);
+                transport.sendMessage(msg, msg.getAllRecipients());
+                transport.close();
               } catch (Exception e) {
                 // Anything here is fatal, we'll skip this user
                 log.log(Level.WARNING, "Failed to send alerts for user " + next + ", skipping check", e);

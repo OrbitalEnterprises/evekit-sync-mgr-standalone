@@ -39,6 +39,8 @@
     <enterprises.orbital.evekit.account_sync_mgr.sched_regime>shared</enterprises.orbital.evekit.account_sync_mgr.sched_regime>
     <enterprises.orbital.evekit.sync_mgr.db.properties.max_size>2</enterprises.orbital.evekit.sync_mgr.db.properties.max_size>
     <enterprises.orbital.evekit.sync_mgr.db.account.max_size>20</enterprises.orbital.evekit.sync_mgr.db.account.max_size>
+    <enterprises.orbital.evekit.sync_mgr.alert_gmail_address>SET ME</enterprises.orbital.evekit.sync_mgr.alert_gmail_address>
+    <enterprises.orbital.evekit.sync_mgr.alert_gmail_password>SET ME</enterprises.orbital.evekit.sync_mgr.alert_gmail_password>
     <!--
     By default, all schedules are disabled.  You should enable schedules individually at build time in a settings.xml profile.
     -->
