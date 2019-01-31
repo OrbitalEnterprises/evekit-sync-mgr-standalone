@@ -22,6 +22,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static enterprises.orbital.evekit.sync.account.AccountCheckScheduleEvent.*;
+
 /**
  * Periodic event to check for any expired refresh tokens.  If such a token exists, and the user
  * which owns the token has configured an alert address, then send a note indicating that the
@@ -41,10 +43,20 @@ public class ESICheckExpiredTokenEvent extends ControllerEvent implements Runnab
 
   private EventScheduler scheduler;
   private ScheduledExecutorService taskScheduler;
+  private boolean shard;
+  private ShardFilter shardFilter;
 
   ESICheckExpiredTokenEvent(EventScheduler scheduler, ScheduledExecutorService taskScheduler) {
     this.scheduler = scheduler;
     this.taskScheduler = taskScheduler;
+    this.shard = OrbitalProperties.getBooleanGlobalProperty(PROP_ENABLE_SHARDING, DEF_ENABLE_SHARDING);
+    if (this.shard) {
+      String stratName = OrbitalProperties.getGlobalProperty(PROP_SHARD_ALGO, DEF_SHARD_ALGO);
+      String stratArgs = OrbitalProperties.getGlobalProperty(PROP_SHARD_CONFIG, DEF_SHARD_CONFIG);
+      this.shardFilter = ShardManager.createShardFilter(ShardManager.Strategies.valueOf(stratName),
+                                                        stratArgs);
+      log.info("Sharding enabled with sharding algorithm " + stratName + " and init: " + stratArgs);
+    }
   }
 
   @Override
@@ -81,7 +93,12 @@ public class ESICheckExpiredTokenEvent extends ControllerEvent implements Runnab
                                                                              .stream()
                                                                              .filter(x -> {
                                                                                x.updateValid();
-                                                                               return x.getEveCharacterID() > 0 && !x.isValid();
+                                                                               return x.getEveCharacterID() > 0 &&
+                                                                                   !x.isValid() &&
+                                                                                   // If we're sharding, then filter using
+                                                                                   // the sharder so we don't send e-mail
+                                                                                   // from each synchronizer for the same account.
+                                                                                   (!shard || shardFilter.process(x));
                                                                              })
                                                                              .collect(Collectors.toList());
 

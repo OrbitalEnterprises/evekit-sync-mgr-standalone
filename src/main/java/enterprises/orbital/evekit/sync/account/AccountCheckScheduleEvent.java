@@ -48,12 +48,12 @@ public class AccountCheckScheduleEvent extends ControllerEvent {
   private static final long DEF_CYCLE_DELAY = TimeUnit.MILLISECONDS.convert(1, TimeUnit.MINUTES);
 
   // Sharding configuration
-  private static final String PROP_ENABLE_SHARDING = "enterprises.orbital.evekit.account_sync_mgr.shard";
-  private static final boolean DEF_ENABLE_SHARDING = false;
-  private static final String PROP_SHARD_ALGO = "enterprises.orbital.evekit.account_sync_mgr.shard_algo";
-  private static final String DEF_SHARD_ALGO = ShardManager.Strategies.SINGLE_HASH.name();
-  private static final String PROP_SHARD_CONFIG = "enterprises.orbital.evekit.account_sync_mgr.shard_config";
-  private static final String DEF_SHARD_CONFIG = "0,1,2,3,4,5,6,7,8,9";
+  static final String PROP_ENABLE_SHARDING = "enterprises.orbital.evekit.account_sync_mgr.shard";
+  static final boolean DEF_ENABLE_SHARDING = false;
+  static final String PROP_SHARD_ALGO = "enterprises.orbital.evekit.account_sync_mgr.shard_algo";
+  static final String DEF_SHARD_ALGO = ShardManager.Strategies.SINGLE_HASH.name();
+  static final String PROP_SHARD_CONFIG = "enterprises.orbital.evekit.account_sync_mgr.shard_config";
+  static final String DEF_SHARD_CONFIG = "0,1,2,3,4,5,6,7,8,9";
 
   // Cache of NPC corporations to filter for unsupported corp endpoints
   private static Set<Integer> npcCorpList = null;
