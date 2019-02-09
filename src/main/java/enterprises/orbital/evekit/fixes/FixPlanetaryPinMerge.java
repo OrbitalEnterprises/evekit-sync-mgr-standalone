@@ -154,7 +154,7 @@ public class FixPlanetaryPinMerge {
               return CachedData.update(toMerge);
             });
             merged++;
-            if (merged % 100 == 0) {
+            if (merged % 1000 == 0) {
               System.out.print(".");
               System.out.flush();
             }
