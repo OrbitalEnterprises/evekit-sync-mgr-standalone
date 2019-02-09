@@ -154,6 +154,10 @@ public class FixPlanetaryPinMerge {
               return CachedData.update(toMerge);
             });
             merged++;
+            if (merged % 100 == 0) {
+              System.out.print(".");
+              System.out.flush();
+            }
 
             // Note that we don't alter the current pin so we can potentially merge with the next pin.
           } else {
