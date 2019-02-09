@@ -95,6 +95,8 @@ public class FixPlanetaryPinMerge {
       System.out.println("Character has " + planetPins.size() + " pins");
       int merged = 0;
       for (Pair<Integer, Long> nextPair : planetPins) {
+        System.out.print("+");
+        System.out.flush();
         List<PlanetaryPin> allPins = retrieveAll((long contid, AttributeSelector at) -> PlanetaryPin.accessQuery(next,
                                                                                                                  contid,
                                                                                                                  1000,
@@ -159,7 +161,7 @@ public class FixPlanetaryPinMerge {
           }
         }
       }
-      System.out.println("Merged " + merged + " pins");
+      System.out.println("\nMerged " + merged + " pins");
     }
   }
 
