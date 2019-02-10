@@ -49,6 +49,8 @@ public class FixPlanetaryPinMerge {
 
   private static void mergePins(final SynchronizedEveAccount next, final PlanetaryPin toUpdate, final long newLifeEnd,
                                 List<PlanetaryPin> toDelete) throws IOException, ExecutionException {
+    System.out.print("m[" + toDelete.size() + "]");
+    System.out.flush();
     EveKitUserAccountProvider.getFactory()
                              .runTransaction(() -> {
                                List<PlanetaryPin> deleteList = new ArrayList<>();
