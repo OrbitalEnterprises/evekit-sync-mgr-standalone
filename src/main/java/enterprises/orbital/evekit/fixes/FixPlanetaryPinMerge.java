@@ -11,26 +11,28 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import static enterprises.orbital.evekit.model.AbstractESIAccountSync.ANY_SELECTOR;
 
 /**
  * This code fixes redundant PlanetaryPinHead storage due to incorrect equality checking.
- *
+ * <p>
  * The fix performs the following modifications:
  *
  * <ol>
- *   <li>Cycle through each character account.</li>
- *   <li>Cycle through all PlanetarPins for each character account grouped by planet ID and pin ID and ordered by lifeline.</li>
- *   <li>If two adjacent pins a and b are equivalent, meaning a.lifeEnd = b.lifeStart and all other fields
- *   are identical, then set a.lifeEnd = b.lifeEnd, merge any meta-data, and delete b.</li>
+ * <li>Cycle through each character account.</li>
+ * <li>Cycle through all PlanetarPins for each character account grouped by planet ID and pin ID and ordered by lifeline.</li>
+ * <li>If two adjacent pins a and b are equivalent, meaning a.lifeEnd = b.lifeStart and all other fields
+ * are identical, then set a.lifeEnd = b.lifeEnd, merge any meta-data, and delete b.</li>
  * </ol>
  */
 public class FixPlanetaryPinMerge {
   // Persistence unit for properties
   private static final String PROP_PROPERTIES_PU = "enterprises.orbital.evekit.sync_mgr.properties.persistence_unit";
 
-  private static List<PlanetaryPin> retrieveAll(AbstractESIAccountSync.QueryCaller<PlanetaryPin> query) throws IOException {
+  private static List<PlanetaryPin> retrieveAll(
+      AbstractESIAccountSync.QueryCaller<PlanetaryPin> query) throws IOException {
     final AttributeSelector ats = AttributeSelector.any();
     long contid = 0;
     List<PlanetaryPin> results = new ArrayList<>();
@@ -44,6 +46,47 @@ public class FixPlanetaryPinMerge {
     return results;
   }
 
+
+  private static void mergePins(final SynchronizedEveAccount next, final PlanetaryPin toUpdate, final long newLifeEnd,
+                                List<PlanetaryPin> toDelete) throws IOException, ExecutionException {
+    EveKitUserAccountProvider.getFactory()
+                             .runTransaction(() -> {
+                               List<PlanetaryPin> deleteList = new ArrayList<>();
+                               PlanetaryPin toMerge = PlanetaryPin.get(next, toUpdate.getLifeStart(),
+                                                                       toUpdate.getPlanetID(), toUpdate.getPinID());
+                               for (PlanetaryPin td : toDelete) {
+                                 deleteList.add(
+                                     PlanetaryPin.get(next, td.getLifeStart(), td.getPlanetID(), td.getPinID()));
+
+                                 for (Map.Entry<String, String> meta : td.getAllMetaData()) {
+                                   try {
+                                     toMerge.setMetaData(meta.getKey(), meta.getValue());
+                                   } catch (MetaDataLimitException e) {
+                                     // This should never happen, fatal if it does
+                                     e.printStackTrace();
+                                     System.exit(1);
+                                   } catch (MetaDataCountException e) {
+                                     // If this happens, then we arbitrarily discard the new data.
+                                     System.out.println("meta-data limit exceeded, dropping new data");
+                                   }
+                                 }
+                               }
+
+
+                               // Delete the old data
+                               for (PlanetaryPin td : deleteList) {
+                                 EveKitUserAccountProvider.getFactory()
+                                                          .getEntityManager()
+                                                          .remove(td);
+                               }
+
+                               // Merge new data
+                               toMerge.setLifeEnd(newLifeEnd);
+                               CachedData.update(toMerge);
+
+                             });
+
+  }
 
   public static void main(
       String[] args)
@@ -124,45 +167,34 @@ public class FixPlanetaryPinMerge {
                                                                                                                  ANY_SELECTOR));
         if (allPins.size() <= 1) continue;
         PlanetaryPin current = allPins.get(0);
+        long currentLifeEnd = current.getLifeEnd();
+        List<PlanetaryPin> toDelete = new ArrayList<>();
         for (PlanetaryPin nextPin : allPins.subList(1, allPins.size())) {
-          if (current.getLifeEnd() == nextPin.getLifeStart() && current.equivalent(nextPin)) {
-
-            // Merge
-            final PlanetaryPin toUpdate = current;
-            current = EveKitUserAccountProvider.getFactory().runTransaction(() -> {
-              PlanetaryPin toMerge = PlanetaryPin.get(next, toUpdate.getLifeStart(), toUpdate.getPlanetID(), toUpdate.getPinID());
-              PlanetaryPin toRemove = PlanetaryPin.get(next, nextPin.getLifeStart(), nextPin.getPlanetID(), nextPin.getPinID());
-
-              toMerge.setLifeEnd(nextPin.getLifeEnd());
-              for (Map.Entry<String, String> meta : nextPin.getAllMetaData()) {
-                try {
-                  toMerge.setMetaData(meta.getKey(), meta.getValue());
-                } catch (MetaDataLimitException e) {
-                  // This should never happen, fatal if it does
-                  e.printStackTrace();
-                  System.exit(1);
-                } catch (MetaDataCountException e) {
-                  // If this happens, then we arbitrarily discard the new data.
-                  System.out.println("meta-data limit exceeded, dropping new data");
-                }
-              }
-
-              // Delete the old data
-              EveKitUserAccountProvider.getFactory().getEntityManager().remove(toRemove);
-
-              // Persist the merged data
-              return CachedData.update(toMerge);
-            });
-            merged++;
-            if (merged % 1000 == 0) {
+          if (currentLifeEnd == nextPin.getLifeStart() && current.equivalent(nextPin)) {
+            toDelete.add(nextPin);
+            currentLifeEnd = nextPin.getLifeEnd();
+          } else {
+            // Handle any pending merges
+            if (!toDelete.isEmpty()) {
+              mergePins(next, current, currentLifeEnd, toDelete);
+              merged += toDelete.size();
               System.out.print(".");
               System.out.flush();
             }
 
-            // Note that we don't alter the current pin so we can potentially merge with the next pin.
-          } else {
+            // Reset and advance current pin
+            toDelete.clear();
             current = nextPin;
+            currentLifeEnd = current.getLifeEnd();
           }
+        }
+
+        // It's possible that all pins were merged, check that here.
+        if (!toDelete.isEmpty()) {
+          mergePins(next, current, currentLifeEnd, toDelete);
+          merged += toDelete.size();
+          System.out.print(".");
+          System.out.flush();
         }
       }
       System.out.println("\nMerged " + merged + " pins");
