@@ -56,20 +56,26 @@ public class FixPlanetaryPinMerge {
                                List<PlanetaryPin> deleteList = new ArrayList<>();
                                PlanetaryPin toMerge = PlanetaryPin.get(next, toUpdate.getLifeStart(),
                                                                        toUpdate.getPlanetID(), toUpdate.getPinID());
+                               Set<Long> deleteSet = new HashSet<>();
                                for (PlanetaryPin td : toDelete) {
-                                 deleteList.add(
-                                     PlanetaryPin.get(next, td.getLifeStart(), td.getPlanetID(), td.getPinID()));
+                                 deleteSet.add(td.getCid());
+                               }
+                               List<PlanetaryPin> allPins = getPins(next, AttributeSelector.values(toUpdate.getPlanetID()), AttributeSelector.values(toUpdate.getPinID()));
+                               for (PlanetaryPin td : allPins) {
+                                 if (deleteSet.contains(td.getCid())) {
+                                   deleteList.add(td);
 
-                                 for (Map.Entry<String, String> meta : td.getAllMetaData()) {
-                                   try {
-                                     toMerge.setMetaData(meta.getKey(), meta.getValue());
-                                   } catch (MetaDataLimitException e) {
-                                     // This should never happen, fatal if it does
-                                     e.printStackTrace();
-                                     System.exit(1);
-                                   } catch (MetaDataCountException e) {
-                                     // If this happens, then we arbitrarily discard the new data.
-                                     System.out.println("meta-data limit exceeded, dropping new data");
+                                   for (Map.Entry<String, String> meta : td.getAllMetaData()) {
+                                     try {
+                                       toMerge.setMetaData(meta.getKey(), meta.getValue());
+                                     } catch (MetaDataLimitException e) {
+                                       // This should never happen, fatal if it does
+                                       e.printStackTrace();
+                                       System.exit(1);
+                                     } catch (MetaDataCountException e) {
+                                       // If this happens, then we arbitrarily discard the new data.
+                                       System.out.println("meta-data limit exceeded, dropping new data");
+                                     }
                                    }
                                  }
                                }
@@ -88,6 +94,34 @@ public class FixPlanetaryPinMerge {
 
                              });
 
+  }
+
+
+  private static List<PlanetaryPin> getPins(SynchronizedEveAccount next, AttributeSelector planetID,
+                                            AttributeSelector pinID) throws IOException {
+    return retrieveAll((long contid, AttributeSelector at) -> PlanetaryPin.accessQuery(next,
+                                                                                       contid,
+                                                                                       1000,
+                                                                                       false,
+                                                                                       at,
+                                                                                       planetID,
+                                                                                       pinID,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR,
+                                                                                       ANY_SELECTOR));
   }
 
   public static void main(
@@ -110,29 +144,7 @@ public class FixPlanetaryPinMerge {
 
       // Collect all unique (planet, pin) pairs for the current character.
       Set<Pair<Integer, Long>> planetPins = new HashSet<>();
-      for (PlanetaryPin existing : retrieveAll((long contid, AttributeSelector at) -> PlanetaryPin.accessQuery(next,
-                                                                                                               contid,
-                                                                                                               1000,
-                                                                                                               false,
-                                                                                                               at,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR,
-                                                                                                               ANY_SELECTOR))) {
+      for (PlanetaryPin existing : getPins(next, ANY_SELECTOR, ANY_SELECTOR)) {
         planetPins.add(Pair.of(existing.getPlanetID(), existing.getPinID()));
       }
 
@@ -142,31 +154,10 @@ public class FixPlanetaryPinMerge {
       for (Pair<Integer, Long> nextPair : planetPins) {
         System.out.print("+");
         System.out.flush();
-        List<PlanetaryPin> allPins = retrieveAll((long contid, AttributeSelector at) -> PlanetaryPin.accessQuery(next,
-                                                                                                                 contid,
-                                                                                                                 1000,
-                                                                                                                 false,
-                                                                                                                 at,
-                                                                                                                 AttributeSelector.values(
-                                                                                                                     nextPair.getLeft()),
-                                                                                                                 AttributeSelector.values(
-                                                                                                                     nextPair.getRight()),
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR,
-                                                                                                                 ANY_SELECTOR));
+        List<PlanetaryPin> allPins = getPins(next, AttributeSelector.values(
+            nextPair.getLeft()),
+                                             AttributeSelector.values(
+                                                 nextPair.getRight()));
         if (allPins.size() <= 1) continue;
         PlanetaryPin current = allPins.get(0);
         long currentLifeEnd = current.getLifeEnd();
@@ -177,6 +168,7 @@ public class FixPlanetaryPinMerge {
             currentLifeEnd = nextPin.getLifeEnd();
           } else {
             // Handle any pending merges
+            //noinspection Duplicates
             if (!toDelete.isEmpty()) {
               mergePins(next, current, currentLifeEnd, toDelete);
               merged += toDelete.size();
@@ -192,6 +184,7 @@ public class FixPlanetaryPinMerge {
         }
 
         // It's possible that all pins were merged, check that here.
+        //noinspection Duplicates
         if (!toDelete.isEmpty()) {
           mergePins(next, current, currentLifeEnd, toDelete);
           merged += toDelete.size();
