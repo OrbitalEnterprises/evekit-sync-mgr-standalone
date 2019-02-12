@@ -60,7 +60,16 @@ public class FixPlanetaryPinMerge {
                                for (PlanetaryPin td : toDelete) {
                                  deleteSet.add(td.getCid());
                                }
-                               List<PlanetaryPin> allPins = getPins(next, AttributeSelector.values(toUpdate.getPlanetID()), AttributeSelector.values(toUpdate.getPinID()));
+                               List<PlanetaryPin> allPins = new ArrayList<>();
+                               if (toDelete.size() >= 1000) {
+                                 allPins = getPins(next, AttributeSelector.values(toUpdate.getPlanetID()),
+                                                   AttributeSelector.values(toUpdate.getPinID()));
+                               } else {
+                                 for (PlanetaryPin td : toDelete) {
+                                   allPins.add(
+                                       PlanetaryPin.get(next, td.getLifeStart(), td.getPlanetID(), td.getPinID()));
+                                 }
+                               }
                                for (PlanetaryPin td : allPins) {
                                  if (deleteSet.contains(td.getCid())) {
                                    deleteList.add(td);
