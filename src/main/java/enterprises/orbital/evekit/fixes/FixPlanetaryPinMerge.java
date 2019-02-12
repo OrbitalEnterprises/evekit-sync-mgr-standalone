@@ -9,9 +9,13 @@ import enterprises.orbital.evekit.model.*;
 import enterprises.orbital.evekit.model.character.PlanetaryPin;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 
 import static enterprises.orbital.evekit.model.AbstractESIAccountSync.ANY_SELECTOR;
 
@@ -31,6 +35,27 @@ public class FixPlanetaryPinMerge {
   // Persistence unit for properties
   private static final String PROP_PROPERTIES_PU = "enterprises.orbital.evekit.sync_mgr.properties.persistence_unit";
 
+  private static List<Pair<Integer, Long>> getPinPairs(final SynchronizedEveAccount owner) throws IOException {
+    try {
+      return EveKitUserAccountProvider.getFactory()
+                                      .runTransaction(() -> {
+                                        List<Pair<Integer, Long>> pairs = new ArrayList<>();
+                                        String query = "SELECT DISTINCT c.planetID, c.pinID FROM PlanetaryPin c where c.owner = :owner";
+                                        Query getter = EveKitUserAccountProvider.getFactory()
+                                                                                .getEntityManager()
+                                                                                .createQuery(query);
+                                        getter.setParameter("owner", owner);
+                                        for (Object next : getter.getResultList()) {
+                                          Object[] nextPair = (Object[]) next;
+                                          pairs.add(Pair.of((Integer) nextPair[0], (Long) nextPair[1]));
+                                        }
+                                        return pairs;
+                                      });
+    } catch (Exception e) {
+      throw new IOException(e.getCause());
+    }
+  }
+
   private static List<PlanetaryPin> retrieveAll(
       AbstractESIAccountSync.QueryCaller<PlanetaryPin> query) throws IOException {
     final AttributeSelector ats = AttributeSelector.any();
@@ -46,60 +71,90 @@ public class FixPlanetaryPinMerge {
     return results;
   }
 
-
   private static void mergePins(final SynchronizedEveAccount next, final PlanetaryPin toUpdate, final long newLifeEnd,
                                 List<PlanetaryPin> toDelete) throws IOException, ExecutionException {
     System.out.print("m[" + toDelete.size() + "]");
     System.out.flush();
     EveKitUserAccountProvider.getFactory()
                              .runTransaction(() -> {
-                               List<PlanetaryPin> deleteList = new ArrayList<>();
-                               PlanetaryPin toMerge = PlanetaryPin.get(next, toUpdate.getLifeStart(),
-                                                                       toUpdate.getPlanetID(), toUpdate.getPinID());
-                               Set<Long> deleteSet = new HashSet<>();
-                               for (PlanetaryPin td : toDelete) {
-                                 deleteSet.add(td.getCid());
-                               }
-                               List<PlanetaryPin> allPins = new ArrayList<>();
-                               if (toDelete.size() >= 1000) {
-                                 allPins = getPins(next, AttributeSelector.values(toUpdate.getPlanetID()),
-                                                   AttributeSelector.values(toUpdate.getPinID()));
-                               } else {
-                                 for (PlanetaryPin td : toDelete) {
-                                   allPins.add(
-                                       PlanetaryPin.get(next, td.getLifeStart(), td.getPlanetID(), td.getPinID()));
-                                 }
-                               }
-                               for (PlanetaryPin td : allPins) {
-                                 if (deleteSet.contains(td.getCid())) {
-                                   deleteList.add(td);
 
-                                   for (Map.Entry<String, String> meta : td.getAllMetaData()) {
-                                     try {
-                                       toMerge.setMetaData(meta.getKey(), meta.getValue());
-                                     } catch (MetaDataLimitException e) {
-                                       // This should never happen, fatal if it does
-                                       e.printStackTrace();
-                                       System.exit(1);
-                                     } catch (MetaDataCountException e) {
-                                       // If this happens, then we arbitrarily discard the new data.
-                                       System.out.println("meta-data limit exceeded, dropping new data");
-                                     }
+                               PlanetaryPin toMerge = EveKitUserAccountProvider.getFactory()
+                                                                               .getEntityManager()
+                                                                               .merge(toUpdate);
+                               for (PlanetaryPin td : toDelete) {
+                                 PlanetaryPin ntd = EveKitUserAccountProvider.getFactory()
+                                                                             .getEntityManager()
+                                                                             .merge(td);
+                                 for (Map.Entry<String, String> meta : td.getAllMetaData()) {
+                                   try {
+                                     toMerge.setMetaData(meta.getKey(), meta.getValue());
+                                   } catch (MetaDataLimitException e) {
+                                     // This should never happen, fatal if it does
+                                     e.printStackTrace();
+                                     System.exit(1);
+                                   } catch (MetaDataCountException e) {
+                                     // If this happens, then we arbitrarily discard the new data.
+                                     System.out.println("meta-data limit exceeded, dropping new data");
                                    }
                                  }
-                               }
 
-
-                               // Delete the old data
-                               for (PlanetaryPin td : deleteList) {
                                  EveKitUserAccountProvider.getFactory()
                                                           .getEntityManager()
-                                                          .remove(td);
+                                                          .remove(ntd);
                                }
 
                                // Merge new data
                                toMerge.setLifeEnd(newLifeEnd);
                                CachedData.update(toMerge);
+
+
+//                               List<PlanetaryPin> deleteList = new ArrayList<>();
+//                               PlanetaryPin toMerge = PlanetaryPin.get(next, toUpdate.getLifeStart(),
+//                                                                       toUpdate.getPlanetID(), toUpdate.getPinID());
+//                               Set<Long> deleteSet = new HashSet<>();
+//                               for (PlanetaryPin td : toDelete) {
+//                                 deleteSet.add(td.getCid());
+//                               }
+//                               List<PlanetaryPin> allPins = new ArrayList<>();
+//                               if (toDelete.size() >= 1000) {
+//                                 allPins = getPins(next, AttributeSelector.values(toUpdate.getPlanetID()),
+//                                                   AttributeSelector.values(toUpdate.getPinID()));
+//                               } else {
+//                                 for (PlanetaryPin td : toDelete) {
+//                                   allPins.add(
+//                                       PlanetaryPin.get(next, td.getLifeStart(), td.getPlanetID(), td.getPinID()));
+//                                 }
+//                               }
+//                               for (PlanetaryPin td : allPins) {
+//                                 if (deleteSet.contains(td.getCid())) {
+//                                   deleteList.add(td);
+//
+//                                   for (Map.Entry<String, String> meta : td.getAllMetaData()) {
+//                                     try {
+//                                       toMerge.setMetaData(meta.getKey(), meta.getValue());
+//                                     } catch (MetaDataLimitException e) {
+//                                       // This should never happen, fatal if it does
+//                                       e.printStackTrace();
+//                                       System.exit(1);
+//                                     } catch (MetaDataCountException e) {
+//                                       // If this happens, then we arbitrarily discard the new data.
+//                                       System.out.println("meta-data limit exceeded, dropping new data");
+//                                     }
+//                                   }
+//                                 }
+//                               }
+//
+//
+//                               // Delete the old data
+//                               for (PlanetaryPin td : deleteList) {
+//                                 EveKitUserAccountProvider.getFactory()
+//                                                          .getEntityManager()
+//                                                          .remove(td);
+//                               }
+//
+//                               // Merge new data
+//                               toMerge.setLifeEnd(newLifeEnd);
+//                               CachedData.update(toMerge);
 
                              });
 
@@ -153,9 +208,10 @@ public class FixPlanetaryPinMerge {
 
       // Collect all unique (planet, pin) pairs for the current character.
       Set<Pair<Integer, Long>> planetPins = new HashSet<>();
-      for (PlanetaryPin existing : getPins(next, ANY_SELECTOR, ANY_SELECTOR)) {
-        planetPins.add(Pair.of(existing.getPlanetID(), existing.getPinID()));
-      }
+      planetPins.addAll(getPinPairs(next));
+//      for (PlanetaryPin existing : getPins(next, ANY_SELECTOR, ANY_SELECTOR)) {
+//        planetPins.add(Pair.of(existing.getPlanetID(), existing.getPinID()));
+//      }
 
       // Now cycle through each (planet, pin) pair in timeline order and merge any equivalent adjacent members.
       System.out.println("Character has " + planetPins.size() + " pins");
