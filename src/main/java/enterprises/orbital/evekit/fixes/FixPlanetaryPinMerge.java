@@ -107,55 +107,6 @@ public class FixPlanetaryPinMerge {
                                toMerge.setLifeEnd(newLifeEnd);
                                CachedData.update(toMerge);
 
-
-//                               List<PlanetaryPin> deleteList = new ArrayList<>();
-//                               PlanetaryPin toMerge = PlanetaryPin.get(next, toUpdate.getLifeStart(),
-//                                                                       toUpdate.getPlanetID(), toUpdate.getPinID());
-//                               Set<Long> deleteSet = new HashSet<>();
-//                               for (PlanetaryPin td : toDelete) {
-//                                 deleteSet.add(td.getCid());
-//                               }
-//                               List<PlanetaryPin> allPins = new ArrayList<>();
-//                               if (toDelete.size() >= 1000) {
-//                                 allPins = getPins(next, AttributeSelector.values(toUpdate.getPlanetID()),
-//                                                   AttributeSelector.values(toUpdate.getPinID()));
-//                               } else {
-//                                 for (PlanetaryPin td : toDelete) {
-//                                   allPins.add(
-//                                       PlanetaryPin.get(next, td.getLifeStart(), td.getPlanetID(), td.getPinID()));
-//                                 }
-//                               }
-//                               for (PlanetaryPin td : allPins) {
-//                                 if (deleteSet.contains(td.getCid())) {
-//                                   deleteList.add(td);
-//
-//                                   for (Map.Entry<String, String> meta : td.getAllMetaData()) {
-//                                     try {
-//                                       toMerge.setMetaData(meta.getKey(), meta.getValue());
-//                                     } catch (MetaDataLimitException e) {
-//                                       // This should never happen, fatal if it does
-//                                       e.printStackTrace();
-//                                       System.exit(1);
-//                                     } catch (MetaDataCountException e) {
-//                                       // If this happens, then we arbitrarily discard the new data.
-//                                       System.out.println("meta-data limit exceeded, dropping new data");
-//                                     }
-//                                   }
-//                                 }
-//                               }
-//
-//
-//                               // Delete the old data
-//                               for (PlanetaryPin td : deleteList) {
-//                                 EveKitUserAccountProvider.getFactory()
-//                                                          .getEntityManager()
-//                                                          .remove(td);
-//                               }
-//
-//                               // Merge new data
-//                               toMerge.setLifeEnd(newLifeEnd);
-//                               CachedData.update(toMerge);
-
                              });
 
   }
