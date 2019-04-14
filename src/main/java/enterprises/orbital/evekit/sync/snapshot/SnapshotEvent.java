@@ -43,7 +43,7 @@ public class SnapshotEvent extends ControllerEvent implements Runnable {
       boolean notify = PersistentProperty.getBooleanPropertyWithFallback(toSnapshot.getUserAccount(),
                                                                          USER_SETTING_NOTIFY_SNAPSHOT,
                                                                          true);
-      log.fine("Notify on snapshot completion? " + String.valueOf(notify) + " for " + toSnapshot);
+      log.fine("Notify on snapshot completion? " + notify + " for " + toSnapshot);
       if (notify) {
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd HH:mm:SS");
         String asof = fmt.format(new Date(dispatchTime));

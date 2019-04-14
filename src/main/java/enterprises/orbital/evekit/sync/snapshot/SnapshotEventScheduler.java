@@ -53,7 +53,7 @@ public class SnapshotEventScheduler extends EventScheduler {
                   pending.add(snapshotEvent);
                 }
               } catch (ParseException e) {
-                log.log(Level.WARNING, "Failed to check snapshot eligbility, skipping: " + next, e);
+                log.log(Level.WARNING, "Failed to check snapshot eligibility, skipping: " + next, e);
               }
             }
           } catch (IOException e) {
